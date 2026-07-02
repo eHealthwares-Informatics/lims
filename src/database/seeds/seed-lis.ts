@@ -1,0 +1,167 @@
+import { DataSource } from 'typeorm';
+import {
+  AttributeDefinitionEntity,
+  LisAttributeDataType,
+  LocationEntity,
+  LocationTypeDefinitionEntity,
+  LoincEntity,
+  OperatorEnum,
+  PriorityEntity,
+  ProgramEntity,
+  ReferenceRangeGender,
+  ReferenceRangeEntity,
+  RejectionReasonEntity,
+  SampleTypeEntity,
+  TestCategoryEntity,
+  TestDefinitionEntity,
+  UnitOfMeasurementEntity,
+} from '../../modules/lis/entities';
+
+export async function seedLis(dataSource: DataSource) {
+  const loincRepo = dataSource.getRepository(LoincEntity);
+  const sampleTypeRepo = dataSource.getRepository(SampleTypeEntity);
+  const rejectionRepo = dataSource.getRepository(RejectionReasonEntity);
+  const priorityRepo = dataSource.getRepository(PriorityEntity);
+  const categoryRepo = dataSource.getRepository(TestCategoryEntity);
+  const programRepo = dataSource.getRepository(ProgramEntity);
+  const locationTypeRepo = dataSource.getRepository(LocationTypeDefinitionEntity);
+  const locationRepo = dataSource.getRepository(LocationEntity);
+  const attrRepo = dataSource.getRepository(AttributeDefinitionEntity);
+  const uomRepo = dataSource.getRepository(UnitOfMeasurementEntity);
+  const testRepo = dataSource.getRepository(TestDefinitionEntity);
+  const rangeRepo = dataSource.getRepository(ReferenceRangeEntity);
+
+  const loinc = await upsertBy(loincRepo, 'code', {
+    code: '718-7',
+    name: 'Hemoglobin [Mass/volume] in Blood',
+    component: 'Hemoglobin',
+    system: 'Blood',
+    property: 'MCnc',
+    scale: 'Qn',
+    active: true,
+  });
+  await upsertBy(loincRepo, 'code', {
+    code: '4548-4',
+    name: 'Hemoglobin A1c/Hemoglobin.total in Blood',
+    component: 'Hemoglobin A1c',
+    system: 'Blood',
+    property: 'MFr',
+    scale: 'Qn',
+    active: true,
+  });
+
+  for (const [accessionCode, name, key] of [
+    ['VAR', 'Actual type will be selected by user', 'Variable'],
+    ['PLA', 'Plasma', 'Plasma'],
+    ['SER', 'Serum', 'Serum'],
+    ['WBL', 'Whole Blood', 'Whole Bld'],
+    ['URI', 'Urines', 'Urines'],
+    ['DRY', 'Dry Tube', 'Dry'],
+    ['EDT', 'EDTA Tube', 'EDTA'],
+    ['DBS', 'DBS', 'DBS'],
+    ['RSW', 'Respiratory Swab', 'Resp Swab'],
+    ['SPU', 'Sputum', 'Sputum'],
+    ['FLD', 'Fluid', 'Fluid'],
+    ['HPS', 'Histopathology specimen', 'HPS'],
+    ['IMM', 'Immunohistochemistry specimen', 'IMMUNO'],
+    ['TAM', 'Tissue antemortem', 'TAM'],
+    ['TMP', 'Tissue post mortem', 'TMP'],
+  ]) {
+    await upsertBy(sampleTypeRepo, 'key', { key, name, accessionCode, description: name, active: true });
+  }
+
+  for (const [code, name] of [
+    ['REJ-HEM', 'Hemolyzed sample'],
+    ['REJ-INS', 'Insufficient volume'],
+    ['REJ-MIS', 'Missing patient identification'],
+    ['REJ-CLO', 'Clotted sample'],
+    ['REJ-LEK', 'Leaking container'],
+  ]) {
+    await upsertBy(rejectionRepo, 'code', { code, name, description: name, active: true });
+  }
+
+  for (const [code, name, index] of [
+    ['PRI-ROUTINE', 'Routine', 10],
+    ['PRI-URGENT', 'Urgent', 20],
+    ['PRI-STAT', 'STAT', 30],
+  ]) {
+    await upsertBy(priorityRepo, 'code', { code, name, index, description: name, active: true });
+  }
+
+  const chemistry = await upsertBy(categoryRepo, 'code', { code: 'CAT-HEM', name: 'Hematology', description: 'Hematology tests', active: true });
+  const program = await upsertBy(programRepo, 'code', { code: 'PRG-DEFAULT', name: 'Default LIS Program', description: 'Default laboratory program', active: true });
+  const mgDl = await upsertBy(uomRepo, 'code', { code: 'UOM-MGDL', name: 'mg/dL', description: 'Milligrams per deciliter', active: true });
+  const serum = await sampleTypeRepo.findOneOrFail({ where: { key: 'Serum' } });
+  const defaultTest = await upsertBy(testRepo, 'code', {
+    code: 'TST-HGB',
+    name: 'Hemoglobin',
+    description: 'Default hemoglobin test definition',
+    loinc,
+    category: chemistry,
+    methodology: 'Automated hematology analyzer',
+    resultType: 'NUMERIC',
+    sampleTypes: [serum],
+    programs: [program],
+    uom: mgDl,
+    minValue: '0',
+    maxValue: '30',
+    criticalMin: '5',
+    criticalMax: '20',
+    turnaroundTimeMinutes: 60,
+    testDurationMinutes: 15,
+    active: true,
+    reportable: true,
+  });
+
+  for (const [gender, minAge, maxAge, lowValue, highValue] of [
+    [ReferenceRangeGender.DEFAULT, 0, 1, 10.5, 20.5],
+    [ReferenceRangeGender.DEFAULT, 2, 12, 11.0, 15.5],
+    [ReferenceRangeGender.MALE, 13, 120, 13.5, 17.5],
+    [ReferenceRangeGender.FEMALE, 13, 120, 12.0, 15.5],
+    [ReferenceRangeGender.DEFAULT, 121, 150, 11.0, 16.0],
+  ] as const) {
+    const exists = await rangeRepo.findOne({ where: { test: { id: defaultTest.id }, gender, minAge, maxAge } });
+    if (!exists) {
+      await rangeRepo.save(rangeRepo.create({ test: defaultTest, gender, minAge, maxAge, lowValue: String(lowValue), highValue: String(highValue), unit: mgDl, active: true, operator: OperatorEnum.BETWEEN }));
+    }
+  }
+
+  const hierarchy = [
+    ['ORGANISATION', 'Organisation', ['FACILITY']],
+    ['FACILITY', 'Facility', ['DEPARTMENT']],
+    ['DEPARTMENT', 'Department', ['CLINIC', 'WARD', 'ROOM']],
+    ['CLINIC', 'Clinic', ['ROOM']],
+    ['WARD', 'Ward', ['ROOM']],
+    ['ROOM', 'Room', ['SHELF', 'FREEZER']],
+    ['SHELF', 'Shelf', ['ROW']],
+    ['FREEZER', 'Freezer', ['ROW']],
+    ['ROW', 'Row', ['COLUMN']],
+    ['COLUMN', 'Column', []],
+  ] as const;
+  const typeMap = new Map<string, LocationTypeDefinitionEntity>();
+  for (const [code, name] of hierarchy) {
+    typeMap.set(code, await upsertBy(locationTypeRepo, 'code', { code, name, description: name, allowChildren: false, active: true }));
+  }
+  for (const [code, , childCodes] of hierarchy) {
+    const type = typeMap.get(code)!;
+    type.allowedChildTypes = childCodes.map((childCode) => typeMap.get(childCode)!).filter(Boolean);
+    type.allowChildren = type.allowedChildTypes.length > 0;
+    await locationTypeRepo.save(type);
+  }
+  for (const key of ['protocol', 'host', 'port', 'serial_port', 'baud_rate', 'data_bits', 'stop_bits', 'parity', 'slave_id', 'temperature_register', 'humidity_register', 'temperature_scale', 'temperature_offset', 'humidity_scale', 'humidity_offset', 'target_temperature', 'warning_threshold', 'critical_threshold', 'polling_interval_seconds', 'active', 'last_updated', 'storage_device_id']) {
+    const exists = await attrRepo.findOne({ where: { key, appliesToType: { id: typeMap.get('FREEZER')!.id } } });
+    if (!exists) {
+      await attrRepo.save(attrRepo.create({ key, name: key.replace(/_/g, ' '), dataType: key === 'active' ? LisAttributeDataType.BOOLEAN : LisAttributeDataType.TEXT, appliesToType: typeMap.get('FREEZER')!, active: true }));
+    }
+  }
+
+  let parent: LocationEntity | null = null;
+  for (const [code, name] of hierarchy) {
+    parent = await upsertBy(locationRepo, 'reference', { name: `Default ${name}`, reference: `LOC-${code}`, type: typeMap.get(code)!, parent, active: true });
+  }
+}
+
+async function upsertBy(repo: any, key: string, payload: Record<string, any>): Promise<any> {
+  const existing = await repo.findOne({ where: { [key]: payload[key] } });
+  return existing ? repo.save({ ...existing, ...payload }) : repo.save(repo.create(payload));
+}
