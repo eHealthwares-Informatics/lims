@@ -1,4 +1,4 @@
-import { IsArray, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class OrderItemDto {
@@ -13,6 +13,30 @@ class OrderItemDto {
 export class CreateOrderDto {
   @IsString()
   patientId!: string;
+
+  @IsOptional()
+  @IsString()
+  internalReference?: string;
+
+  @IsOptional()
+  @IsString()
+  externalReference?: string;
+
+  @IsString()
+  patientName!: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  patientAge?: number;
+
+  @IsOptional()
+  @IsString()
+  patientGender?: string;
+
+  @IsOptional()
+  @IsString()
+  patientDateOfBirth?: string;
 
   @IsOptional()
   @IsString()

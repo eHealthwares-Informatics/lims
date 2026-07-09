@@ -3,6 +3,7 @@ import { LisBaseEntity } from './lis-base.entity';
 import { OrderItemEntity } from './order-item.entity';
 import { UnitOfMeasurementEntity } from './uom.entity';
 import { ReferenceRangeEntity } from './reference-range.entity';
+import { StatusEntity } from './status.entity';
 
 @Entity('lis_results')
 export class ResultEntity extends LisBaseEntity {
@@ -30,6 +31,16 @@ export class ResultEntity extends LisBaseEntity {
   @Column({ type: 'uuid', nullable: true })
   referenceRangeId!: string | null;
 
+  @Column({ type: 'text', default: 'PENDING' })
+  status!: string;
+
+  @ManyToOne(() => StatusEntity)
+  @JoinColumn({ name: 'status_id' })
+  statusRef!: StatusEntity | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  statusId!: string | null;
+
   @Column({ type: 'text', nullable: true })
   enteredById!: string | null;
 
@@ -44,4 +55,7 @@ export class ResultEntity extends LisBaseEntity {
 
   @Column({ type: 'text', nullable: true })
   notes!: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  acknowledgedAt!: string | null;
 }

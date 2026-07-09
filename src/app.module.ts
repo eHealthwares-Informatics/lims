@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-options.interface';
+import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { DatabaseSeedService } from './database/seeding.service';
 import { HealthController } from './modules/health/controllers/health.controller';
 import { LisModule } from './modules/lis/lis.module';
@@ -9,6 +12,7 @@ import { LisModule } from './modules/lis/lis.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    JwtModule.register({}),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService): TypeOrmModuleOptions => {
@@ -30,6 +34,9 @@ import { LisModule } from './modules/lis/lis.module';
     LisModule,
   ],
   controllers: [HealthController],
-  providers: [DatabaseSeedService],
+  providers: [
+    DatabaseSeedService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+  ],
 })
 export class AppModule {}

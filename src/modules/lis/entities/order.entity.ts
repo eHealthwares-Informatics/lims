@@ -1,8 +1,8 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { LisBaseEntity } from './lis-base.entity';
-import { PatientEntity } from './patient.entity';
 import { PriorityEntity } from './priority.entity';
 import { OrderItemEntity } from './order-item.entity';
+import { StatusEntity } from './status.entity';
 
 @Entity('lis_orders')
 export class OrderEntity extends LisBaseEntity {
@@ -10,15 +10,36 @@ export class OrderEntity extends LisBaseEntity {
   @Column({ type: 'text' })
   orderNumber!: string;
 
-  @ManyToOne(() => PatientEntity)
-  @JoinColumn({ name: 'patient_id' })
-  patient!: PatientEntity;
-
-  @Column({ type: 'uuid' })
+  @Column({ type: 'text' })
   patientId!: string;
 
-  @Column({ type: 'text', default: 'PENDING' })
+  @Column({ type: 'text', nullable: true })
+  internalReference!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  externalReference!: string | null;
+
+  @Column({ type: 'text' })
+  patientName!: string;
+
+  @Column({ type: 'int', nullable: true })
+  patientAge!: number | null;
+
+  @Column({ type: 'text', nullable: true })
+  patientGender!: string | null;
+
+  @Column({ type: 'date', nullable: true })
+  patientDateOfBirth!: string | null;
+
+  @Column({ type: 'text', default: 'ENTERED' })
   status!: string;
+
+  @ManyToOne(() => StatusEntity)
+  @JoinColumn({ name: 'status_id' })
+  statusRef!: StatusEntity | null;
+
+  @Column({ type: 'uuid', nullable: true })
+  statusId!: string | null;
 
   @ManyToOne(() => PriorityEntity, { nullable: true })
   @JoinColumn({ name: 'priority_id' })

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Brackets, IsNull, Repository } from 'typeorm';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
+import { TenantContext } from '../../../common/tenant-context';
 import { LisBaseEntity } from '../entities';
 
 export interface ListResponse<T> {
@@ -35,10 +36,28 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     return item;
   }
 
-  async list(query: ListQueryDto & Record<string, string>): Promise<ListResponse<T>> {
+  protected applyTenantFilter(qb: any, tenant?: TenantContext): void {
+    if (!tenant || tenant.isGlobalAdmin) return;
+
+    qb.andWhere(`(
+      ${this.alias}.organization_id = :orgId
+      OR ${this.alias}.organization_id IS NULL
+    )`, { orgId: tenant.organizationId });
+
+    if (tenant.locationId) {
+      qb.andWhere(`(
+        ${this.alias}.location_id = :locId
+        OR ${this.alias}.location_id IS NULL
+      )`, { locId: tenant.locationId });
+    }
+  }
+
+  async list(query: ListQueryDto & Record<string, string>, tenant?: TenantContext): Promise<ListResponse<T>> {
     const qb = this.repo
       .createQueryBuilder(this.alias)
       .where(`${this.alias}.deleted_at IS NULL`);
+
+    this.applyTenantFilter(qb, tenant);
 
     for (const relation of this.relations()) {
       if (!relation.includes('.')) {
@@ -66,36 +85,41 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     return { data: data.map((item) => this.serialize(item)), total };
   }
 
-  async findOne(id: string): Promise<any> {
-    const item = await this.repo.findOne({
-      where: { id, deletedAt: IsNull() } as any,
-      relations: this.relations(),
-    });
+  async findOne(id: string, tenant?: TenantContext): Promise<any> {
+    const qb = this.repo.createQueryBuilder(this.alias)
+      .where(`${this.alias}.id = :id`, { id })
+      .andWhere(`${this.alias}.deleted_at IS NULL`);
+
+    this.applyTenantFilter(qb, tenant);
+
+    for (const relation of this.relations()) {
+      if (!relation.includes('.')) {
+        qb.leftJoinAndSelect(`${this.alias}.${relation}`, relation);
+      }
+    }
+
+    const item = await qb.getOne();
     if (!item) {
       throw new NotFoundException('Record not found');
     }
     return this.serialize(item);
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<any> {
-    const item = await this.repo.findOne({
-      where: { id, deletedAt: IsNull() } as any,
-    });
-    if (!item) {
-      throw new NotFoundException('Record not found');
-    }
-    const blocked = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at']);
+  async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
+    const item = await this.findOne(id, tenant);
+    const blocked = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'organizationId', 'organization_id', 'locationId', 'location_id']);
     for (const [key, value] of Object.entries(payload)) {
       if (!blocked.has(key) && !key.endsWith('Id') && !key.endsWith('Ids')) {
         (item as any)[key] = value;
       }
     }
     await this.repo.save(item);
-    return this.findOne(id);
+    return this.findOne(id, tenant);
   }
 
-  async archive(id: string): Promise<void> {
-    const result = await this.repo.softDelete(id);
+  async archive(id: string, tenant?: TenantContext): Promise<void> {
+    const item = await this.findOne(id, tenant);
+    const result = await this.repo.softDelete(item.id);
     if (!result.affected) {
       throw new NotFoundException('Record not found');
     }

@@ -5,6 +5,7 @@ import { LocationTypeDefinitionEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateLocationTypeDefinitionDto } from '../dto/location-type-definition.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class LocationTypesService extends BaseLisService<LocationTypeDefinitionEntity> {
@@ -30,7 +31,7 @@ export class LocationTypesService extends BaseLisService<LocationTypeDefinitionE
     };
   }
 
-  async create(payload: CreateLocationTypeDefinitionDto): Promise<any> {
+  async create(payload: CreateLocationTypeDefinitionDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('location-types', payload.name ?? '').replace('LOC-', '');
     const allowedChildTypes = payload.allowedChildTypeIds?.length
       ? await this.repo.findBy({ id: In(payload.allowedChildTypeIds) })
@@ -43,16 +44,15 @@ export class LocationTypesService extends BaseLisService<LocationTypeDefinitionE
         allowChildren: payload.allowChildren ?? allowedChildTypes.length > 0,
         allowedChildTypes,
         active: payload.active ?? true,
+        organizationId: tenant?.organizationId ?? null,
+        locationId: tenant?.locationId ?? null,
       }),
     );
     return this.findOne(item.id);
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<any> {
-    const item = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['allowedChildTypes'] });
-    if (!item) {
-      throw new BadRequestException('Record not found');
-    }
+  async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
+    const item = await this.findOne(id, tenant);
     if (payload.name) item.name = payload.name as string;
     if (payload.description !== undefined) item.description = payload.description as string | null;
     if (payload.allowChildren !== undefined) item.allowChildren = payload.allowChildren as boolean;
@@ -62,12 +62,12 @@ export class LocationTypesService extends BaseLisService<LocationTypeDefinitionE
       item.allowedChildTypes = ids.length ? await this.repo.findBy({ id: In(ids) }) : [];
     }
     await this.repo.save(item);
-    return this.findOne(id);
+    return this.findOne(id, tenant);
   }
 
-  async archive(id: string): Promise<void> {
+  async archive(id: string, tenant?: TenantContext): Promise<void> {
     await this.cascadeDisable(id);
-    await super.archive(id);
+    await super.archive(id, tenant);
   }
 
   private async cascadeDisable(id: string): Promise<void> {

@@ -8,10 +8,12 @@ import {
   OperatorEnum,
   PriorityEntity,
   ProgramEntity,
+  QcLotEntity,
   ReferenceRangeGender,
   ReferenceRangeEntity,
   RejectionReasonEntity,
   SampleTypeEntity,
+  StatusEntity,
   TestCategoryEntity,
   TestDefinitionEntity,
   UnitOfMeasurementEntity,
@@ -30,6 +32,55 @@ export async function seedLis(dataSource: DataSource) {
   const uomRepo = dataSource.getRepository(UnitOfMeasurementEntity);
   const testRepo = dataSource.getRepository(TestDefinitionEntity);
   const rangeRepo = dataSource.getRepository(ReferenceRangeEntity);
+  const statusRepo = dataSource.getRepository(StatusEntity);
+
+  const seedStatuses = async () => {
+    for (const [code, name, domain, sortOrder] of [
+      ['ENTERED', 'Entered', 'ORDER', 0],
+      ['IN_PROGRESS', 'In Progress', 'ORDER', 1],
+      ['COMPLETED', 'Completed', 'ORDER', 2],
+      ['CANCELLED', 'Cancelled', 'ORDER', 9],
+      ['COLLECTED', 'Collected', 'SAMPLE', 0],
+      ['RECEIVED', 'Received', 'SAMPLE', 1],
+      ['IN_PROGRESS', 'In Progress', 'SAMPLE', 2],
+      ['DISPOSED', 'Disposed', 'SAMPLE', 3],
+      ['REJECTED', 'Rejected', 'SAMPLE', 9],
+      ['PENDING', 'Pending', 'RESULT', 0],
+      ['TECHNICAL_REVIEW', 'Technical Review', 'RESULT', 1],
+      ['FINALIZED', 'Finalized', 'RESULT', 2],
+    ] as const) {
+      await upsertBy(statusRepo, 'code', { code, name, description: name, domain, sortOrder, active: true });
+    }
+  };
+
+  await seedStatuses();
+
+  const qcLotRepo = dataSource.getRepository(QcLotEntity);
+  const hgbTest = await testRepo.findOne({ where: { code: 'HGB' } });
+  if (hgbTest) {
+    await upsertBy(qcLotRepo, 'lotNumber', {
+      controlName: 'Bio-Rad Liquichek Level 1',
+      lotNumber: 'QC-2024-001',
+      expiryDate: '2025-12-31',
+      manufacturer: 'Bio-Rad',
+      active: true,
+      notes: 'Normal control level 1',
+      testConfig: [
+        { testDefinitionId: hgbTest.id, mean: 14.5, sd: 0.5, testName: 'Hemoglobin' },
+      ],
+    });
+    await upsertBy(qcLotRepo, 'lotNumber', {
+      controlName: 'Bio-Rad Liquichek Level 2',
+      lotNumber: 'QC-2024-002',
+      expiryDate: '2025-12-31',
+      manufacturer: 'Bio-Rad',
+      active: true,
+      notes: 'Abnormal control level 2',
+      testConfig: [
+        { testDefinitionId: hgbTest.id, mean: 8.0, sd: 0.4, testName: 'Hemoglobin' },
+      ],
+    });
+  }
 
   const loinc = await upsertBy(loincRepo, 'code', {
     code: '718-7',

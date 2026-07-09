@@ -5,6 +5,7 @@ import { AttributeDefinitionEntity, AttributeValueEntity, LocationEntity, Locati
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateLocationDto } from '../dto/location.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class LocationsService extends BaseLisService<LocationEntity> {
@@ -30,7 +31,7 @@ export class LocationsService extends BaseLisService<LocationEntity> {
     return { ...item, typeId: item.type?.id, parentId: item.parent?.id };
   }
 
-  async create(payload: CreateLocationDto): Promise<any> {
+  async create(payload: CreateLocationDto, tenant?: TenantContext): Promise<any> {
     const type = await this.locationTypeRepo.findOne({
       where: { id: payload.typeId, deletedAt: null } as any,
       relations: ['allowedChildTypes'],
@@ -54,6 +55,8 @@ export class LocationsService extends BaseLisService<LocationEntity> {
         type,
         parent,
         active: payload.active ?? true,
+        organizationId: tenant?.organizationId ?? null,
+        locationId: tenant?.locationId ?? null,
       }),
     );
     if (payload.attributeValues?.length) {

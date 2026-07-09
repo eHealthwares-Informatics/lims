@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { ReferenceRangeEntity, ReferenceRangeGender, TestDefinitionEntity, UnitOfMeasurementEntity } from '../entities';
 import { BaseLisService } from './base-lis.service';
 import { CreateReferenceRangeDto } from '../dto/reference-range.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class ReferenceRangesService extends BaseLisService<ReferenceRangeEntity> {
@@ -27,7 +28,7 @@ export class ReferenceRangesService extends BaseLisService<ReferenceRangeEntity>
     return { ...item, testId: item.test?.id, unitId: item.unit?.id };
   }
 
-  async create(payload: CreateReferenceRangeDto): Promise<any> {
+  async create(payload: CreateReferenceRangeDto, tenant?: TenantContext): Promise<any> {
     if (+payload.minAge > +payload.maxAge || +payload.lowValue > +payload.highValue) {
       throw new BadRequestException('Invalid range bounds');
     }
@@ -59,17 +60,30 @@ export class ReferenceRangesService extends BaseLisService<ReferenceRangeEntity>
         operator: payload.operator,
         criticalLow: payload.criticalLow === undefined ? null : String(payload.criticalLow),
         criticalHigh: payload.criticalHigh === undefined ? null : String(payload.criticalHigh),
+        organizationId: tenant?.organizationId ?? null,
+        locationId: tenant?.locationId ?? null,
       }),
     );
     return this.findOne(item.id);
   }
 
-  async validateCoverage(testId: string) {
-    const ranges = await this.repo.find({
-      where: { test: { id: testId }, deletedAt: IsNull() },
-      relations: ['test'],
-      order: { gender: 'ASC', minAge: 'ASC' },
-    });
+  async validateCoverage(testId: string, tenant?: TenantContext) {
+    const qb = this.repo.createQueryBuilder('range')
+      .where('range.test_definition_id = :testId', { testId })
+      .andWhere('range.deleted_at IS NULL');
+
+    if (tenant && !tenant.isGlobalAdmin) {
+      qb.andWhere('(range.organization_id = :orgId OR range.organization_id IS NULL)', { orgId: tenant.organizationId });
+      if (tenant.locationId) {
+        qb.andWhere('(range.location_id = :locId OR range.location_id IS NULL)', { locId: tenant.locationId });
+      }
+    }
+
+    const ranges = await qb
+      .leftJoinAndSelect('range.test', 'test')
+      .orderBy('range.gender', 'ASC')
+      .addOrderBy('range.min_age', 'ASC')
+      .getMany();
     const issues: Array<{ type: 'OVERLAP' | 'UNCOVERED'; gender: ReferenceRangeGender; message: string }> = [];
     for (const gender of Object.values(ReferenceRangeGender)) {
       const genderRanges = ranges.filter((r) => r.gender === gender);

@@ -38,6 +38,7 @@ describe('LIS Integration (Postgres)', () => {
         process.env.DB_DROP_SCHEMA = 'true'
         process.env.DB_SYNCHRONIZE = 'true'
         process.env.TYPEORM_LOGGING = 'false'
+        process.env.SKIP_AUTH = 'true'
 
         const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile()
         app = moduleRef.createNestApplication()
