@@ -5,6 +5,7 @@ import { UnitOfMeasurementEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { NamedCodeDto } from '../dto/named-code.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class UnitsOfMeasurementService extends BaseLisService<UnitOfMeasurementEntity> {
@@ -19,7 +20,7 @@ export class UnitsOfMeasurementService extends BaseLisService<UnitOfMeasurementE
     return ['name', 'code'];
   }
 
-  async create(payload: NamedCodeDto): Promise<any> {
+  async create(payload: NamedCodeDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('uoms', payload.name ?? '');
     if (!this.codes.isValid('uoms', code)) {
       throw new BadRequestException(`Invalid code for uoms ${this.codes.expression('uoms')}`);

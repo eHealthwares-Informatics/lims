@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ResultSignatureEntity } from '../entities';
 import { CreateSignatureDto } from '../dto/result-signature.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class ResultSignaturesService {
@@ -10,7 +11,7 @@ export class ResultSignaturesService {
     @InjectRepository(ResultSignatureEntity) private readonly repo: Repository<ResultSignatureEntity>,
   ) {}
 
-  async sign(dto: CreateSignatureDto): Promise<ResultSignatureEntity> {
+  async sign(dto: CreateSignatureDto, tenant?: TenantContext): Promise<ResultSignatureEntity> {
     return this.repo.save(
       this.repo.create({
         resultId: dto.resultId,
@@ -24,7 +25,7 @@ export class ResultSignaturesService {
     );
   }
 
-  async findByResult(resultId: string): Promise<ResultSignatureEntity[]> {
+  async findByResult(resultId: string, tenant?: TenantContext): Promise<ResultSignatureEntity[]> {
     return this.repo.find({
       where: { resultId },
       order: { signedAt: 'ASC' },
@@ -45,7 +46,7 @@ export class ResultSignaturesService {
     return count > 0;
   }
 
-  async getSignatureStatus(resultId: string): Promise<{ technical: boolean; supervisor: boolean }> {
+  async getSignatureStatus(resultId: string, tenant?: TenantContext): Promise<{ technical: boolean; supervisor: boolean }> {
     const [technical, supervisor] = await Promise.all([
       this.hasTechnicalSignature(resultId),
       this.hasSupervisorSignature(resultId),

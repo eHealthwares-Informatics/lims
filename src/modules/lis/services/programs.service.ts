@@ -5,6 +5,7 @@ import { ProgramEntity, TestDefinitionEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateProgramDto } from '../dto/program.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class ProgramsService extends BaseLisService<ProgramEntity> {
@@ -31,7 +32,7 @@ export class ProgramsService extends BaseLisService<ProgramEntity> {
     };
   }
 
-  async create(payload: CreateProgramDto): Promise<any> {
+  async create(payload: CreateProgramDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('programs', payload.name ?? '');
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate) {
@@ -52,7 +53,7 @@ export class ProgramsService extends BaseLisService<ProgramEntity> {
     return this.findOne(item.id);
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<any> {
+  async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
     const item = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['testDefinitions'] });
     if (!item) {
       throw new BadRequestException('Record not found');

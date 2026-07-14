@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QcAlertEntity } from '../entities';
 import { BaseLisService } from './base-lis.service';
+import { TenantContext } from '../../../common/tenant-context';
 import type { WestgardRule, AlertSeverity } from '../entities/qc-alert.entity';
 
 export interface ViolationInput {
@@ -40,7 +41,7 @@ export class QcAlertsService extends BaseLisService<QcAlertEntity> {
     );
   }
 
-  async findActive(): Promise<QcAlertEntity[]> {
+  async findActive(tenant?: TenantContext): Promise<QcAlertEntity[]> {
     return this.repo.find({
       where: { active: true, deletedAt: null } as any,
       relations: ['qcResult'],
@@ -48,7 +49,7 @@ export class QcAlertsService extends BaseLisService<QcAlertEntity> {
     });
   }
 
-  async acknowledge(id: string, by?: string): Promise<any> {
+  async acknowledge(id: string, by?: string, tenant?: TenantContext): Promise<any> {
     const item = await this.repo.findOne({
       where: { id, deletedAt: null } as any,
     });

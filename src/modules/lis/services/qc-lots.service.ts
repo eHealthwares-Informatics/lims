@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { QcLotEntity } from '../entities';
 import { BaseLisService } from './base-lis.service';
 import { CreateQcLotDto } from '../dto/qc-lot.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class QcLotsService extends BaseLisService<QcLotEntity> {
@@ -17,7 +18,7 @@ export class QcLotsService extends BaseLisService<QcLotEntity> {
     return ['controlName', 'lotNumber'];
   }
 
-  async create(payload: CreateQcLotDto): Promise<any> {
+  async create(payload: CreateQcLotDto, tenant?: TenantContext): Promise<any> {
     const item = await this.repo.save(
       this.repo.create({
         controlName: payload.controlName,

@@ -5,6 +5,7 @@ import { PriorityEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreatePriorityDto } from '../dto/priority.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class PrioritiesService extends BaseLisService<PriorityEntity> {
@@ -19,7 +20,7 @@ export class PrioritiesService extends BaseLisService<PriorityEntity> {
     return ['name', 'code'];
   }
 
-  async create(payload: CreatePriorityDto): Promise<any> {
+  async create(payload: CreatePriorityDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('priorities', payload.name ?? '');
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate) {

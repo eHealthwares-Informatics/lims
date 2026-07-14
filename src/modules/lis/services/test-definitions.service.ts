@@ -12,6 +12,7 @@ import {
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateTestDefinitionDto } from '../dto/test-definition.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class TestDefinitionsService extends BaseLisService<TestDefinitionEntity> {
@@ -46,7 +47,7 @@ export class TestDefinitionsService extends BaseLisService<TestDefinitionEntity>
     };
   }
 
-  async create(payload: CreateTestDefinitionDto): Promise<any> {
+  async create(payload: CreateTestDefinitionDto, tenant?: TenantContext): Promise<any> {
     const [loinc, category, uom, sampleTypes, programs] = await Promise.all([
       payload.loincId ? this.loincRepo.findOneBy({ id: payload.loincId }) : null,
       payload.categoryId ? this.categoryRepo.findOneBy({ id: payload.categoryId }) : null,

@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { AttributeDefinitionEntity, LisAttributeDataType, LocationTypeDefinitionEntity } from '../entities';
 import { BaseLisService } from './base-lis.service';
 import { CreateAttributeDefinitionDto } from '../dto/attribute-definition.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class AttributeDefinitionsService extends BaseLisService<AttributeDefinitionEntity> {
@@ -29,7 +30,7 @@ export class AttributeDefinitionsService extends BaseLisService<AttributeDefinit
     };
   }
 
-  async create(payload: CreateAttributeDefinitionDto): Promise<any> {
+  async create(payload: CreateAttributeDefinitionDto, tenant?: TenantContext): Promise<any> {
     const appliesToType = await this.locationTypeRepo.findOne({ where: { id: payload.appliesToTypeId, deletedAt: null } as any });
     if (!appliesToType) {
       throw new BadRequestException('Location type not found');

@@ -5,6 +5,7 @@ import { TestCategoryEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { NamedCodeDto } from '../dto/named-code.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class TestCategoriesService extends BaseLisService<TestCategoryEntity> {
@@ -19,7 +20,7 @@ export class TestCategoriesService extends BaseLisService<TestCategoryEntity> {
     return ['name', 'code'];
   }
 
-  async create(payload: NamedCodeDto): Promise<any> {
+  async create(payload: NamedCodeDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('test-categories', payload.name ?? '');
     if (!this.codes.isValid('test-categories', code)) {
       throw new BadRequestException(`Invalid code for test-categories ${this.codes.expression('test-categories')}`);

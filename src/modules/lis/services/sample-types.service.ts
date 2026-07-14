@@ -5,6 +5,7 @@ import { SampleTypeEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateSampleTypeDto } from '../dto/sample-type.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class SampleTypesService extends BaseLisService<SampleTypeEntity> {
@@ -19,7 +20,7 @@ export class SampleTypesService extends BaseLisService<SampleTypeEntity> {
     return ['name', 'key', 'accession_code'];
   }
 
-  async create(payload: CreateSampleTypeDto): Promise<any> {
+  async create(payload: CreateSampleTypeDto, tenant?: TenantContext): Promise<any> {
     const key = payload.key ?? this.codes.generate('sample-types', payload.name).replace('SMP-', '');
     const duplicate = await this.repo.findOne({ where: [{ key }, { accessionCode: payload.accessionCode }] as any });
     if (duplicate) {

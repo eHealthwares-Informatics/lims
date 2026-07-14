@@ -5,6 +5,7 @@ import { TestSectionEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateTestSectionDto } from '../dto/test-section.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class TestSectionsService extends BaseLisService<TestSectionEntity> {
@@ -19,7 +20,7 @@ export class TestSectionsService extends BaseLisService<TestSectionEntity> {
     return ['name', 'code'];
   }
 
-  async create(payload: CreateTestSectionDto): Promise<any> {
+  async create(payload: CreateTestSectionDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('test-sections', payload.name ?? '');
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate) {

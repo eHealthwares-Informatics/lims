@@ -51,7 +51,7 @@ export class OrdersController {
   @Post(':id/transition')
   @ApiOperation({ summary: 'Transition order status' })
   async transition(@Param('id') id: string, @Body() dto: TransitionOrderStatusDto, @CurrentUser() user: RequestUser) {
-    return this.service.transitionStatus(id, dto.statusId, undefined, dto.reason, tenantFromUser(user));
+    return this.service.transitionStatus(id, dto.statusId, tenantFromUser(user), undefined, dto.reason);
   }
 
   @Patch(':id')

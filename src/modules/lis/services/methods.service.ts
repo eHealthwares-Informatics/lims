@@ -5,6 +5,7 @@ import { MethodEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateMethodDto } from '../dto/method.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class MethodsService extends BaseLisService<MethodEntity> {
@@ -19,7 +20,7 @@ export class MethodsService extends BaseLisService<MethodEntity> {
     return ['name', 'code'];
   }
 
-  async create(payload: CreateMethodDto): Promise<any> {
+  async create(payload: CreateMethodDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('methods', payload.name ?? '');
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate) {

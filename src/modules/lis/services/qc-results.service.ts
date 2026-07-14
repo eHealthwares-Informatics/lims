@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { QcLotEntity, QcResultEntity } from '../entities';
 import { BaseLisService } from './base-lis.service';
+import { TenantContext } from '../../../common/tenant-context';
 import { CreateQcResultDto } from '../dto/qc-result.dto';
 import { WestgardService } from './westgard.service';
 import { QcAlertsService } from './qc-alerts.service';
@@ -26,7 +27,7 @@ export class QcResultsService extends BaseLisService<QcResultEntity> {
     return ['instrument', 'technician'];
   }
 
-  async create(payload: CreateQcResultDto): Promise<any> {
+  async create(payload: CreateQcResultDto, tenant?: TenantContext): Promise<any> {
     const qcLot = await this.qcLotRepo.findOne({
       where: { id: payload.qcLotId, deletedAt: null } as any,
     });
@@ -87,7 +88,7 @@ export class QcResultsService extends BaseLisService<QcResultEntity> {
     return this.findOne(item.id);
   }
 
-  async findByLot(qcLotId: string): Promise<QcResultEntity[]> {
+  async findByLot(qcLotId: string, tenant?: TenantContext): Promise<QcResultEntity[]> {
     return this.repo.find({
       where: { qcLotId, deletedAt: null } as any,
       relations: ['qcLot', 'testDefinition'],
@@ -95,7 +96,7 @@ export class QcResultsService extends BaseLisService<QcResultEntity> {
     });
   }
 
-  async findOutOfControl(): Promise<QcResultEntity[]> {
+  async findOutOfControl(tenant?: TenantContext): Promise<QcResultEntity[]> {
     return this.repo.find({
       where: { inControl: false, deletedAt: null } as any,
       relations: ['qcLot', 'testDefinition'],

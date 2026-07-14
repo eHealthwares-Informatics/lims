@@ -5,6 +5,7 @@ import { RejectionReasonEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { NamedCodeDto } from '../dto/named-code.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class RejectionReasonsService extends BaseLisService<RejectionReasonEntity> {
@@ -19,7 +20,7 @@ export class RejectionReasonsService extends BaseLisService<RejectionReasonEntit
     return ['name', 'code'];
   }
 
-  async create(payload: NamedCodeDto): Promise<any> {
+  async create(payload: NamedCodeDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('rejection-reasons', payload.name ?? '');
     if (!this.codes.isValid('rejection-reasons', code)) {
       throw new BadRequestException(`Invalid code for rejection-reasons ${this.codes.expression('rejection-reasons')}`);

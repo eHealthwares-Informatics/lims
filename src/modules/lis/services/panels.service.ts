@@ -5,6 +5,7 @@ import { PanelEntity, PanelItemEntity, TestDefinitionEntity } from '../entities'
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreatePanelDto } from '../dto/panel.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class PanelsService extends BaseLisService<PanelEntity> {
@@ -36,7 +37,7 @@ export class PanelsService extends BaseLisService<PanelEntity> {
     };
   }
 
-  async create(payload: CreatePanelDto): Promise<any> {
+  async create(payload: CreatePanelDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('panels', payload.name ?? '');
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate) {
@@ -65,7 +66,7 @@ export class PanelsService extends BaseLisService<PanelEntity> {
     return this.findOne(panel.id);
   }
 
-  async update(id: string, payload: Record<string, unknown>): Promise<any> {
+  async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
     const panel = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['panelItems'] });
     if (!panel) {
       throw new BadRequestException('Panel not found');

@@ -5,6 +5,7 @@ import { LoincEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateLoincDto } from '../dto/loinc.dto';
+import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
 export class LoincService extends BaseLisService<LoincEntity> {
@@ -19,7 +20,7 @@ export class LoincService extends BaseLisService<LoincEntity> {
     return ['name', 'code', 'component', 'system'];
   }
 
-  async create(payload: CreateLoincDto): Promise<any> {
+  async create(payload: CreateLoincDto, tenant?: TenantContext): Promise<any> {
     const code = payload.code ?? this.codes.generate('loinc', payload.name);
     if (!this.codes.isValid('loinc', code)) {
       throw new BadRequestException(`Invalid code for loinc ${this.codes.expression('loinc')}`);
