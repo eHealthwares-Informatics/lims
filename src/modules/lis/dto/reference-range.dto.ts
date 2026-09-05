@@ -12,6 +12,10 @@ export class CreateReferenceRangeDto {
   gender!: ReferenceRangeGender;
 
   @ApiProperty()
+  @IsString()
+  alias!: string;
+
+  @ApiProperty()
   @IsInt()
   @Min(0)
   minAge!: number;
@@ -39,8 +43,9 @@ export class CreateReferenceRangeDto {
   @IsOptional()
   active?: boolean;
 
-  @ApiProperty({ enum: OperatorEnum, default: OperatorEnum.BETWEEN })
+  @ApiPropertyOptional({ enum: OperatorEnum, default: OperatorEnum.BETWEEN })
   @IsEnum(OperatorEnum)
+  @IsOptional()
   operator!: OperatorEnum;
 
   @ApiPropertyOptional()

@@ -94,4 +94,37 @@ export class PanelsService extends BaseLisService<PanelEntity> {
     }
     return this.findOne(id);
   }
+
+  async replace(id: string, payload: CreatePanelDto, tenant?: TenantContext): Promise<any> {
+    const panel = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['panelItems'] });
+    if (!panel) {
+      throw new BadRequestException('Panel not found');
+    }
+    const code = payload.code ?? panel.code;
+    const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
+    if (duplicate && duplicate.id !== id) {
+      throw new BadRequestException('Code already exists');
+    }
+    await this.panelItemRepo.delete({ panel: { id } });
+    const saved = await this.repo.save({
+      ...panel,
+      code,
+      name: payload.name,
+      description: payload.description ?? null,
+      active: payload.active ?? true,
+    });
+    if (payload.items?.length) {
+      const tests = await this.testDefRepo.find({ where: { id: In(payload.items.map((i) => i.testId)) } });
+      await this.panelItemRepo.save(
+        payload.items.map((item) =>
+          this.panelItemRepo.create({
+            panel: saved,
+            test: tests.find((t) => t.id === item.testId)!,
+            sortOrder: item.sortOrder ?? 0,
+          }),
+        ),
+      );
+    }
+    return this.findOne(saved.id);
+  }
 }

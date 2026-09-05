@@ -65,6 +65,24 @@ export class LocationTypesService extends BaseLisService<LocationTypeDefinitionE
     return this.findOne(id, tenant);
   }
 
+  async replace(id: string, payload: CreateLocationTypeDefinitionDto, tenant?: TenantContext): Promise<any> {
+    const item = await this.findOne(id, tenant);
+    const code = payload.code ?? item.code;
+    const allowedChildTypes = payload.allowedChildTypeIds?.length
+      ? await this.repo.findBy({ id: In(payload.allowedChildTypeIds) })
+      : [];
+    const saved = await this.repo.save({
+      ...item,
+      code,
+      name: payload.name,
+      description: payload.description ?? null,
+      allowChildren: payload.allowChildren ?? allowedChildTypes.length > 0,
+      allowedChildTypes,
+      active: payload.active ?? true,
+    });
+    return this.findOne(saved.id, tenant);
+  }
+
   async archive(id: string, tenant?: TenantContext): Promise<void> {
     await this.cascadeDisable(id);
     await super.archive(id, tenant);

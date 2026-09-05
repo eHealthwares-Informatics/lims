@@ -1,14 +1,20 @@
 import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import {
+  AnalyteEntity,
   AttributeDefinitionEntity,
   AttributeValueEntity,
+  EqaEnrollmentEntity,
+  EqaProgramEntity,
+  EqaResultEntity,
   LocationEntity,
   LocationTypeDefinitionEntity,
   LoincEntity,
   MethodEntity,
+  ObservationHistoryTypeEntity,
   OrderEntity,
   OrderItemEntity,
   PanelEntity,
@@ -16,15 +22,18 @@ import {
   PatientEntity,
   PriorityEntity,
   ProgramEntity,
+  QaChecklistItemEntity,
   QcAlertEntity,
   QcLotEntity,
   QcResultEntity,
   ReferenceRangeEntity,
+  ReferenceTableEntity,
   RejectionReasonEntity,
   ResultEntity,
   ResultSignatureEntity,
   SampleEntity,
   SampleTypeEntity,
+  SourceOfSampleEntity,
   StatusEntity,
   StatusHistoryEntity,
   TestCategoryEntity,
@@ -33,6 +42,8 @@ import {
   UnitOfMeasurementEntity,
 } from './entities';
 import { CodeGeneratorService } from './services/code-generator.service';
+import { ReportPdfService } from './services/report-pdf.service';
+import { ReportDeliveryService } from './services/report-delivery.service';
 import { LoincService } from './services/loinc.service';
 import { SampleTypesService } from './services/sample-types.service';
 import { RejectionReasonsService } from './services/rejection-reasons.service';
@@ -57,10 +68,24 @@ import { SamplesService } from './services/samples.service';
 import { StatusesService } from './services/statuses.service';
 import { StatusHistoryService } from './services/status-history.service';
 import { UsersProxyService } from './services/users-proxy.service';
+import { DashboardService } from './services/dashboard.service';
 import { QcLotsService } from './services/qc-lots.service';
 import { QcResultsService } from './services/qc-results.service';
 import { QcAlertsService } from './services/qc-alerts.service';
 import { WestgardService } from './services/westgard.service';
+import { EqaProgramsService } from './services/eqa-programs.service';
+import { EqaEnrollmentsService } from './services/eqa-enrollments.service';
+import { EqaResultsService } from './services/eqa-results.service';
+import { QaChecklistItemsService } from './services/qa-checklist-items.service';
+import { AnalytesService } from './services/analytes.service';
+import { ObservationHistoryTypesService } from './services/observation-history-types.service';
+import { ReferenceTablesService } from './services/reference-tables.service';
+import { SourceOfSamplesService } from './services/source-of-samples.service';
+import { AnalytesController } from './controllers/analytes.controller';
+import { ObservationHistoryTypesController } from './controllers/observation-history-types.controller';
+import { ReferenceTablesController } from './controllers/reference-tables.controller';
+import { SourceOfSamplesController } from './controllers/source-of-samples.controller';
+import { CodeGeneratorController } from './controllers/code-generator.controller';
 import { LoincController } from './controllers/loinc.controller';
 import { SampleTypesController } from './controllers/sample-types.controller';
 import { RejectionReasonsController } from './controllers/rejection-reasons.controller';
@@ -84,28 +109,38 @@ import { SamplesController } from './controllers/samples.controller';
 import { StatusesController } from './controllers/statuses.controller';
 import { UsersProxyController } from './controllers/users-proxy.controller';
 import { LisInteropController } from './controllers/lis-interop.controller';
+import { DashboardController } from './controllers/dashboard.controller';
 import { QcLotsController } from './controllers/qc-lots.controller';
 import { QcResultsController } from './controllers/qc-results.controller';
 import { QcAlertsController } from './controllers/qc-alerts.controller';
+import { EqaProgramsController } from './controllers/eqa-programs.controller';
+import { EqaEnrollmentsController } from './controllers/eqa-enrollments.controller';
+import { EqaResultsController } from './controllers/eqa-results.controller';
+import { QaChecklistItemsController } from './controllers/qa-checklist-items.controller';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     HttpModule,
+    JwtModule.register({}),
     TypeOrmModule.forFeature([
+      AnalyteEntity,
       AttributeDefinitionEntity,
       AttributeValueEntity,
       LocationEntity,
       LocationTypeDefinitionEntity,
       LoincEntity,
       MethodEntity,
+      ObservationHistoryTypeEntity,
       PanelEntity,
       PanelItemEntity,
       PriorityEntity,
       ProgramEntity,
       ReferenceRangeEntity,
+      ReferenceTableEntity,
       RejectionReasonEntity,
       SampleTypeEntity,
+      SourceOfSampleEntity,
       TestCategoryEntity,
       TestDefinitionEntity,
       TestSectionEntity,
@@ -118,12 +153,17 @@ import { QcAlertsController } from './controllers/qc-alerts.controller';
       SampleEntity,
       StatusEntity,
       StatusHistoryEntity,
+      QaChecklistItemEntity,
       QcLotEntity,
       QcResultEntity,
       QcAlertEntity,
+      EqaProgramEntity,
+      EqaEnrollmentEntity,
+      EqaResultEntity,
     ]),
   ],
   controllers: [
+    CodeGeneratorController,
     LoincController,
     SampleTypesController,
     RejectionReasonsController,
@@ -150,9 +190,20 @@ import { QcAlertsController } from './controllers/qc-alerts.controller';
     QcLotsController,
     QcResultsController,
     QcAlertsController,
+    EqaProgramsController,
+    EqaEnrollmentsController,
+    EqaResultsController,
+    DashboardController,
+    AnalytesController,
+    ObservationHistoryTypesController,
+    ReferenceTablesController,
+    SourceOfSamplesController,
+    QaChecklistItemsController,
   ],
   providers: [
     CodeGeneratorService,
+    ReportPdfService,
+    ReportDeliveryService,
     LoincService,
     SampleTypesService,
     RejectionReasonsService,
@@ -177,10 +228,19 @@ import { QcAlertsController } from './controllers/qc-alerts.controller';
     StatusesService,
     StatusHistoryService,
     UsersProxyService,
+    DashboardService,
     QcLotsService,
     QcResultsService,
     QcAlertsService,
     WestgardService,
+    EqaProgramsService,
+    EqaEnrollmentsService,
+    EqaResultsService,
+    AnalytesService,
+    ObservationHistoryTypesService,
+    ReferenceTablesService,
+    SourceOfSamplesService,
+    QaChecklistItemsService,
   ],
   exports: [
     CodeGeneratorService,
@@ -212,6 +272,9 @@ import { QcAlertsController } from './controllers/qc-alerts.controller';
     QcResultsService,
     QcAlertsService,
     WestgardService,
+    EqaProgramsService,
+    EqaEnrollmentsService,
+    EqaResultsService,
   ],
 })
 export class LisModule {}

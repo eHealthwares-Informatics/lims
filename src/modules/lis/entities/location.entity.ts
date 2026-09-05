@@ -25,6 +25,9 @@ export class LocationEntity extends LisBaseEntity {
   @Column({ type: 'boolean', default: true })
   active!: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  storageAssignment!: boolean;
+
   @OneToMany(() => AttributeValueEntity, (value) => value.location, { cascade: true })
   attributeValues!: AttributeValueEntity[];
 }

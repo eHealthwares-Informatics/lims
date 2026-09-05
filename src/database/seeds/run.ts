@@ -1,7 +1,10 @@
 import 'reflect-metadata';
+import { config as loadDotEnv } from 'dotenv';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { seedLis } from './seed-lis';
+
+loadDotEnv();
 
 const config = new ConfigService();
 const type = config.get<'postgres' | 'sqlite'>('DB_TYPE', 'postgres');

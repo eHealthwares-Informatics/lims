@@ -4,6 +4,7 @@ export interface TenantContext {
   organizationId: string;
   locationId: string | null;
   isGlobalAdmin: boolean;
+  userId: string | null;
 }
 
 export function tenantFromUser(user: RequestUser): TenantContext {
@@ -11,5 +12,6 @@ export function tenantFromUser(user: RequestUser): TenantContext {
     organizationId: user.organizationId,
     locationId: user.locationId ?? null,
     isGlobalAdmin: !user.organizationId,
+    userId: user.sub ?? null,
   };
 }

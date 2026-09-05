@@ -68,4 +68,28 @@ export class ProgramsService extends BaseLisService<ProgramEntity> {
     await this.repo.save(item);
     return this.findOne(id);
   }
+
+  async replace(id: string, payload: CreateProgramDto, tenant?: TenantContext): Promise<any> {
+    const item = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['testDefinitions'] });
+    if (!item) {
+      throw new BadRequestException('Record not found');
+    }
+    const code = payload.code ?? item.code;
+    const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
+    if (duplicate && duplicate.id !== id) {
+      throw new BadRequestException('Code already exists');
+    }
+    const testDefinitions = payload.testDefinitionIds?.length
+      ? await this.testDefRepo.findBy({ id: In(payload.testDefinitionIds) })
+      : [];
+    const saved = await this.repo.save({
+      ...item,
+      code,
+      name: payload.name,
+      description: payload.description ?? null,
+      testDefinitions,
+      active: payload.active ?? true,
+    });
+    return this.findOne(saved.id);
+  }
 }

@@ -32,6 +32,12 @@ export class SampleTypesService extends BaseLisService<SampleTypeEntity> {
         description: payload.description ?? null,
         key,
         accessionCode: payload.accessionCode.toUpperCase(),
+        defaultQuantity: payload.defaultQuantity ?? null,
+        minimumQuantity: payload.minimumQuantity ?? null,
+        unit: payload.unit ?? null,
+        containerType: payload.containerType ?? null,
+        collectionInstructions: payload.collectionInstructions ?? null,
+        storageRequirements: payload.storageRequirements ?? null,
         active: payload.active ?? true,
       }),
     );

@@ -11,7 +11,7 @@ export class ResultEntity extends LisBaseEntity {
   @JoinColumn({ name: 'order_item_id' })
   orderItem!: OrderItemEntity;
 
-  @Column({ type: 'uuid' })
+  @Column({ name: 'order_item_id', type: 'uuid' })
   orderItemId!: string;
 
   @Column({ type: 'text', nullable: true })
@@ -21,14 +21,14 @@ export class ResultEntity extends LisBaseEntity {
   @JoinColumn({ name: 'unit_id' })
   unit!: UnitOfMeasurementEntity | null;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'unit_id', type: 'uuid', nullable: true })
   unitId!: string | null;
 
   @ManyToOne(() => ReferenceRangeEntity, { nullable: true })
   @JoinColumn({ name: 'reference_range_id' })
   referenceRange!: ReferenceRangeEntity | null;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'reference_range_id', type: 'uuid', nullable: true })
   referenceRangeId!: string | null;
 
   @Column({ type: 'text', default: 'PENDING' })
@@ -38,7 +38,7 @@ export class ResultEntity extends LisBaseEntity {
   @JoinColumn({ name: 'status_id' })
   statusRef!: StatusEntity | null;
 
-  @Column({ type: 'uuid', nullable: true })
+  @Column({ name: 'status_id', type: 'uuid', nullable: true })
   statusId!: string | null;
 
   @Column({ type: 'text', nullable: true })

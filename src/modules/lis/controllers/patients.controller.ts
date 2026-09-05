@@ -1,8 +1,9 @@
-import { Controller, Get, Header, Param, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { toCsv } from '../../../shared/utils/csv';
 import { PatientsService } from '../services/patients.service';
+import { CreatePatientDto } from '../dto/patient.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 import { tenantFromUser } from '../../../common/tenant-context';
@@ -13,7 +14,7 @@ export class PatientsController {
   constructor(private readonly service: PatientsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List unique patients derived from orders' })
+  @ApiOperation({ summary: 'List patients with pagination' })
   async list(@Query() query: ListQueryDto, @Query() rawQuery: Record<string, string>, @CurrentUser() user: RequestUser) {
     const result = await this.service.list({ ...rawQuery, ...query } as any, tenantFromUser(user));
     return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };
@@ -28,5 +29,26 @@ export class PatientsController {
   @Get(':id')
   get(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     return this.service.findOne(id, tenantFromUser(user));
+  }
+
+  @Post()
+  create(@Body() dto: CreatePatientDto, @CurrentUser() user: RequestUser) {
+    return this.service.create(dto, tenantFromUser(user));
+  }
+
+  @Patch(':id')
+  patch(@Param('id') id: string, @Body() dto: Record<string, unknown>, @CurrentUser() user: RequestUser) {
+    return this.service.update(id, dto, tenantFromUser(user));
+  }
+
+  @Put(':id')
+  replace(@Param('id') id: string, @Body() dto: CreatePatientDto, @CurrentUser() user: RequestUser) {
+    return this.service.replace(id, dto, tenantFromUser(user));
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    await this.service.archive(id, tenantFromUser(user));
+    return { ok: true };
   }
 }

@@ -1,10 +1,13 @@
-import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query, StreamableFile } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { toCsv } from '../../../shared/utils/csv';
 import { OrdersService } from '../services/orders.service';
 import { StatusHistoryService } from '../services/status-history.service';
+import { ReportPdfService } from '../services/report-pdf.service';
+import { ReportDeliveryService } from '../services/report-delivery.service';
 import { CreateOrderDto } from '../dto/order.dto';
+import { SendReportDto } from '../dto/send-report.dto';
 import { TransitionOrderStatusDto } from '../dto/sample.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -16,6 +19,8 @@ export class OrdersController {
   constructor(
     private readonly service: OrdersService,
     private readonly statusHistory: StatusHistoryService,
+    private readonly reportPdfService: ReportPdfService,
+    private readonly reportDelivery: ReportDeliveryService,
   ) {}
 
   @Get()
@@ -43,6 +48,22 @@ export class OrdersController {
     return { data };
   }
 
+  @Get(':id/report-pdf')
+  @ApiOperation({ summary: 'Generate and download the order report as PDF' })
+  async reportPdf(@Param('id') id: string) {
+    const { buffer, filename } = await this.reportPdfService.generatePdf(id);
+    return new StreamableFile(buffer, {
+      type: 'application/pdf',
+      disposition: `attachment; filename="${filename}"`,
+    });
+  }
+
+  @Post(':id/send-report')
+  @ApiOperation({ summary: 'Send the order report via WhatsApp, SMS or Email' })
+  async sendReport(@Param('id') id: string, @Body() dto: SendReportDto) {
+    return this.reportDelivery.send(id, dto);
+  }
+
   @Post()
   create(@Body() dto: CreateOrderDto, @CurrentUser() user: RequestUser) {
     return this.service.create(dto, tenantFromUser(user));
@@ -57,6 +78,11 @@ export class OrdersController {
   @Patch(':id')
   patch(@Param('id') id: string, @Body() dto: Record<string, unknown>, @CurrentUser() user: RequestUser) {
     return this.service.update(id, dto, tenantFromUser(user));
+  }
+
+  @Put(':id')
+  replace(@Param('id') id: string, @Body() dto: CreateOrderDto, @CurrentUser() user: RequestUser) {
+    return this.service.replace(id, dto, tenantFromUser(user));
   }
 
   @Delete(':id')

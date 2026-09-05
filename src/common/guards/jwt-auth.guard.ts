@@ -13,7 +13,11 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    if (process.env.SKIP_AUTH === 'true') return true;
+    if (process.env.SKIP_AUTH === 'true') {
+      const request = context.switchToHttp().getRequest();
+      request.user = { sub: 'skip-auth-user', organizationId: '00000000-0000-0000-0000-000000000000', locationId: null, username: 'skip-auth', roles: [], permissions: [] };
+      return true;
+    }
 
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsObject, IsOptional, IsString } from 'class-validator';
+import { TestResultType } from '../entities/test-definition.entity';
 
 export class CreateTestDefinitionDto {
   @ApiPropertyOptional()
@@ -29,11 +30,21 @@ export class CreateTestDefinitionDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  methodology?: string;
+  methodId?: string;
 
-  @ApiProperty({ default: 'NUMERIC' })
+  @ApiPropertyOptional()
   @IsString()
-  resultType!: string;
+  @IsOptional()
+  testSectionId?: string;
+
+  @ApiProperty({ enum: TestResultType, default: TestResultType.NUMERIC })
+  @IsEnum(TestResultType)
+  resultType!: TestResultType;
+
+  @ApiPropertyOptional()
+  @IsObject()
+  @IsOptional()
+  validationRules?: Record<string, unknown>;
 
   @ApiPropertyOptional({ type: [String] })
   @IsArray()

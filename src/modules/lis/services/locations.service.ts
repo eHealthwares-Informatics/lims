@@ -55,8 +55,9 @@ export class LocationsService extends BaseLisService<LocationEntity> {
         type,
         parent,
         active: payload.active ?? true,
+        storageAssignment: payload.storageAssignment ?? false,
         organizationId: tenant?.organizationId ?? null,
-        locationId: tenant?.locationId ?? null,
+        locationId: payload.locationId ?? tenant?.locationId ?? null,
       }),
     );
     if (payload.attributeValues?.length) {

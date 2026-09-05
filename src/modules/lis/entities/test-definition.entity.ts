@@ -1,11 +1,25 @@
 import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
 import { LisBaseEntity } from './lis-base.entity';
 import { LoincEntity } from './loinc.entity';
+import { MethodEntity } from './method.entity';
 import { ProgramEntity } from './program.entity';
 import { ReferenceRangeEntity } from './reference-range.entity';
 import { SampleTypeEntity } from './sample-type.entity';
 import { TestCategoryEntity } from './test-category.entity';
+import { TestSectionEntity } from './test-section.entity';
 import { UnitOfMeasurementEntity } from './uom.entity';
+
+export enum TestResultType {
+  NUMERIC = 'NUMERIC',
+  TEXT = 'TEXT',
+  DICTIONARY = 'DICTIONARY',
+  BOOLEAN = 'BOOLEAN',
+  DATE = 'DATE',
+  RICH_TEXT = 'RICH_TEXT',
+  ATTACHMENT = 'ATTACHMENT',
+  TABLE = 'TABLE',
+  CALCULATED = 'CALCULATED',
+}
 
 @Entity('lis_test_definitions')
 export class TestDefinitionEntity extends LisBaseEntity {
@@ -29,11 +43,23 @@ export class TestDefinitionEntity extends LisBaseEntity {
   @JoinColumn({ name: 'category_id' })
   category!: TestCategoryEntity | null;
 
-  @Column({ type: 'text', nullable: true })
-  methodology!: string | null;
+  @ManyToOne(() => MethodEntity, { nullable: true })
+  @JoinColumn({ name: 'method_id' })
+  method!: MethodEntity | null;
 
-  @Column({ name: 'result_type', type: 'text' })
-  resultType!: string;
+  @ManyToOne(() => TestSectionEntity, { nullable: true })
+  @JoinColumn({ name: 'test_section_id' })
+  testSection!: TestSectionEntity | null;
+
+  @ManyToOne(() => UnitOfMeasurementEntity, { nullable: true })
+  @JoinColumn({ name: 'uom_id' })
+  uom!: UnitOfMeasurementEntity | null;
+
+  @Column({ name: 'result_type', type: 'enum', enum: TestResultType, default: TestResultType.NUMERIC })
+  resultType!: TestResultType;
+
+  @Column({ name: 'validation_rules', type: 'jsonb', nullable: true })
+  validationRules!: Record<string, unknown> | null;
 
   @ManyToMany(() => SampleTypeEntity)
   @JoinTable({
@@ -43,33 +69,29 @@ export class TestDefinitionEntity extends LisBaseEntity {
   })
   sampleTypes!: SampleTypeEntity[];
 
-  @ManyToOne(() => UnitOfMeasurementEntity, { nullable: true })
-  @JoinColumn({ name: 'uom_id' })
-  uom!: UnitOfMeasurementEntity | null;
-
-  @Column({ name: 'min_value', type: 'text', nullable: true })
-  minValue!: string | null;
-
-  @Column({ name: 'max_value', type: 'text', nullable: true })
-  maxValue!: string | null;
-
-  @Column({ name: 'critical_min', type: 'text', nullable: true })
-  criticalMin!: string | null;
-
-  @Column({ name: 'critical_max', type: 'text', nullable: true })
-  criticalMax!: string | null;
-
-  @Column({ name: 'turnaround_time_minutes', type: 'int', nullable: true })
-  turnaroundTimeMinutes!: number | null;
-
-  @Column({ name: 'test_duration_minutes', type: 'int', nullable: true })
-  testDurationMinutes!: number | null;
-
   @Column({ type: 'boolean', default: true })
   active!: boolean;
 
   @Column({ type: 'boolean', default: true })
   reportable!: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  minValue!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  maxValue!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  criticalMin!: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  criticalMax!: string | null;
+
+  @Column({ type: 'int', nullable: true })
+  turnaroundTimeMinutes!: number | null;
+
+  @Column({ type: 'int', nullable: true })
+  testDurationMinutes!: number | null;
 
   @OneToMany(() => ReferenceRangeEntity, (range) => range.test, { cascade: true })
   referenceRanges!: ReferenceRangeEntity[];

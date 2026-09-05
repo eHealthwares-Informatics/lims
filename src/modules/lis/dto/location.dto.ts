@@ -6,6 +6,11 @@ export class CreateLocationDto {
   @IsString()
   name!: string;
 
+  @ApiPropertyOptional({ description: 'Identity service site (location) id this lab location belongs to; defaults to the caller\u2019s location' })
+  @IsString()
+  @IsOptional()
+  locationId?: string;
+
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
@@ -24,6 +29,11 @@ export class CreateLocationDto {
   @IsBoolean()
   @IsOptional()
   active?: boolean;
+
+  @ApiPropertyOptional({ default: false })
+  @IsBoolean()
+  @IsOptional()
+  storageAssignment?: boolean;
 
   @ApiPropertyOptional({ type: 'array' })
   @IsArray()

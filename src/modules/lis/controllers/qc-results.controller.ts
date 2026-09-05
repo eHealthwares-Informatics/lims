@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { toCsv } from '../../../shared/utils/csv';
@@ -53,6 +53,11 @@ export class QcResultsController {
   @Patch(':id')
   patch(@Param('id') id: string, @Body() dto: Record<string, unknown>, @CurrentUser() user: RequestUser) {
     return this.service.update(id, dto, tenantFromUser(user));
+  }
+
+  @Put(':id')
+  replace(@Param('id') id: string, @Body() dto: Record<string, unknown>, @CurrentUser() user: RequestUser) {
+    return this.service.replace(id, dto, tenantFromUser(user));
   }
 
   @Delete(':id')

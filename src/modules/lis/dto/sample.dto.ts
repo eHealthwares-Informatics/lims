@@ -13,7 +13,7 @@ export class CreateSampleDto {
   @ApiPropertyOptional()
   @IsString()
   @IsOptional()
-  sampleType?: string;
+  sampleTypeId?: string;
 
   @ApiPropertyOptional()
   @IsString()
@@ -44,6 +44,26 @@ export class CreateSampleDto {
   @IsString()
   @IsOptional()
   notes?: string;
+
+  @ApiPropertyOptional({ default: 'PENDING' })
+  @IsString()
+  @IsOptional()
+  printStatus?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  printedAt?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  storageLocationId?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  storageNotes?: string;
 }
 
 export class TransitionOrderStatusDto {

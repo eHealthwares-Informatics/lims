@@ -20,7 +20,7 @@ const resourcePayloads: Record<string, any> = {
     'attribute-definitions': { key: 'attr_test', name: 'Attribute Test', description: 'Integration test', appliesToTypeId: '', dataType: 'TEXT', required: false, active: true },
     locations: { name: 'Location Test', reference: 'LOC-TEST', typeId: '', parentId: null, active: true, attributeValues: [] },
     'test-definitions': { code: 'TD-TEST', name: 'Test Definition', description: 'Integration test', loincId: '', categoryId: '', methodology: 'M', resultType: 'NUMERIC', sampleTypeIds: [], programIds: [], uomId: '', minValue: '0', maxValue: '100', criticalMin: '1', criticalMax: '99', turnaroundTimeMinutes: 60, testDurationMinutes: 120, active: true, reportable: true },
-    'reference-ranges': { testId: '', gender: 'DEFAULT', minAge: 0, maxAge: 10, lowValue: '0.1', highValue: '1.0', unitId: '', active: true, operator: 'BETWEEN', criticalLow: '0.05', criticalHigh: '1.5' },
+    'reference-ranges': { testId: '', alias: 'TEST-RANGE', gender: 'DEFAULT', minAge: 0, maxAge: 10, lowValue: '0.1', highValue: '1.0', unitId: '', active: true, operator: 'BETWEEN', criticalLow: '0.05', criticalHigh: '1.5' },
 }
 const log = (res) => {
                         if (res.statusCode != 201) {
@@ -34,7 +34,7 @@ describe('LIS Integration (Postgres)', () => {
     let createdIds: Record<string, string> = {}
 
     beforeAll(async () => {
-        process.env.DB_NAME = process.env.DB_NAME ?? 'rxsoft_lis_test'
+        process.env.DB_NAME = 'rxsoft_lis_test'
         process.env.DB_DROP_SCHEMA = 'true'
         process.env.DB_SYNCHRONIZE = 'true'
         process.env.TYPEORM_LOGGING = 'false'

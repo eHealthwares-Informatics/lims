@@ -50,6 +50,7 @@ export class ReferenceRangesService extends BaseLisService<ReferenceRangeEntity>
     const item = await this.repo.save(
       this.repo.create({
         test,
+        alias: payload.alias,
         gender: payload.gender,
         minAge: payload.minAge,
         maxAge: payload.maxAge,
@@ -65,6 +66,34 @@ export class ReferenceRangesService extends BaseLisService<ReferenceRangeEntity>
       }),
     );
     return this.findOne(item.id);
+  }
+
+  async replace(id: string, payload: CreateReferenceRangeDto, tenant?: TenantContext): Promise<any> {
+    const item = await this.findOne(id, tenant);
+    if (+payload.minAge > +payload.maxAge || +payload.lowValue > +payload.highValue) {
+      throw new BadRequestException('Invalid range bounds');
+    }
+    const test = await this.testDefRepo.findOneBy({ id: payload.testId });
+    if (!test) {
+      throw new BadRequestException('Test definition not found');
+    }
+    const unit = payload.unitId ? await this.uomRepo.findOneBy({ id: payload.unitId }) : null;
+    const saved = await this.repo.save({
+      ...item,
+      test,
+      alias: payload.alias,
+      gender: payload.gender,
+      minAge: payload.minAge,
+      maxAge: payload.maxAge,
+      lowValue: String(payload.lowValue),
+      highValue: String(payload.highValue),
+      unit,
+      active: payload.active ?? true,
+      operator: payload.operator,
+      criticalLow: payload.criticalLow === undefined ? null : String(payload.criticalLow),
+      criticalHigh: payload.criticalHigh === undefined ? null : String(payload.criticalHigh),
+    });
+    return this.findOne(saved.id, tenant);
   }
 
   async validateCoverage(testId: string, tenant?: TenantContext) {

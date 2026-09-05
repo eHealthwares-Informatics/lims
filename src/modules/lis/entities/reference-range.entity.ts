@@ -43,6 +43,9 @@ export class ReferenceRangeEntity extends LisBaseEntity {
   @JoinColumn({ name: 'unit_id' })
   unit!: UnitOfMeasurementEntity | null;
 
+  @Column({ type: 'text', default: 'Default' })
+  alias!: string;
+
   @Column({ type: 'boolean', default: true })
   active!: boolean;
 

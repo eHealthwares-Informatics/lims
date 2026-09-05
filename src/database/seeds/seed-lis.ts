@@ -1,6 +1,8 @@
 import { DataSource } from 'typeorm';
+import { seedCsv } from './seed-csv';
 import {
   AttributeDefinitionEntity,
+  EqaProgramEntity,
   LisAttributeDataType,
   LocationEntity,
   LocationTypeDefinitionEntity,
@@ -9,6 +11,7 @@ import {
   PriorityEntity,
   ProgramEntity,
   QcLotEntity,
+  QaChecklistItemEntity,
   ReferenceRangeGender,
   ReferenceRangeEntity,
   RejectionReasonEntity,
@@ -101,24 +104,34 @@ export async function seedLis(dataSource: DataSource) {
     active: true,
   });
 
-  for (const [accessionCode, name, key] of [
-    ['VAR', 'Actual type will be selected by user', 'Variable'],
-    ['PLA', 'Plasma', 'Plasma'],
-    ['SER', 'Serum', 'Serum'],
-    ['WBL', 'Whole Blood', 'Whole Bld'],
-    ['URI', 'Urines', 'Urines'],
-    ['DRY', 'Dry Tube', 'Dry'],
-    ['EDT', 'EDTA Tube', 'EDTA'],
-    ['DBS', 'DBS', 'DBS'],
-    ['RSW', 'Respiratory Swab', 'Resp Swab'],
-    ['SPU', 'Sputum', 'Sputum'],
-    ['FLD', 'Fluid', 'Fluid'],
-    ['HPS', 'Histopathology specimen', 'HPS'],
-    ['IMM', 'Immunohistochemistry specimen', 'IMMUNO'],
-    ['TAM', 'Tissue antemortem', 'TAM'],
-    ['TMP', 'Tissue post mortem', 'TMP'],
+  for (const [accessionCode, name, key, defaultQuantity, minimumQuantity, unit, containerType] of [
+    ['VAR', 'Actual type will be selected by user', 'Variable', null, null, null, null],
+    ['PLA', 'Plasma', 'Plasma', 5, 3, 'mL', 'Plasma Separator Tube (PST)'],
+    ['SER', 'Serum', 'Serum', 5, 3, 'mL', 'Serum Separator Tube (SST)'],
+    ['WBL', 'Whole Blood', 'Whole Bld', 5, 3, 'mL', 'EDTA Tube'],
+    ['URI', 'Urines', 'Urines', 10, 5, 'mL', 'Sterile urine container'],
+    ['DRY', 'Dry Tube', 'Dry', null, null, null, 'Plain/Dry Tube'],
+    ['EDT', 'EDTA Tube', 'EDTA', 4, 2, 'mL', 'EDTA Tube'],
+    ['DBS', 'DBS', 'DBS', null, null, null, 'DBS card'],
+    ['RSW', 'Respiratory Swab', 'Resp Swab', null, null, null, 'Swab with transport medium'],
+    ['SPU', 'Sputum', 'Sputum', 5, 2, 'mL', 'Sterile sputum container'],
+    ['FLD', 'Fluid', 'Fluid', 5, 2, 'mL', 'Sterile container'],
+    ['HPS', 'Histopathology specimen', 'HPS', null, null, null, 'Formalin container'],
+    ['IMM', 'Immunohistochemistry specimen', 'IMMUNO', null, null, null, 'Formalin container'],
+    ['TAM', 'Tissue antemortem', 'TAM', null, null, null, 'Formalin container'],
+    ['TMP', 'Tissue post mortem', 'TMP', null, null, null, 'Formalin container'],
   ]) {
-    await upsertBy(sampleTypeRepo, 'key', { key, name, accessionCode, description: name, active: true });
+    await upsertBy(sampleTypeRepo, 'key', {
+      key,
+      name,
+      accessionCode,
+      description: name,
+      defaultQuantity,
+      minimumQuantity,
+      unit,
+      containerType,
+      active: true,
+    });
   }
 
   for (const [code, name] of [
@@ -208,8 +221,44 @@ export async function seedLis(dataSource: DataSource) {
 
   let parent: LocationEntity | null = null;
   for (const [code, name] of hierarchy) {
-    parent = await upsertBy(locationRepo, 'reference', { name: `Default ${name}`, reference: `LOC-${code}`, type: typeMap.get(code)!, parent, active: true });
+    parent = await upsertBy(locationRepo, 'reference', {
+      name: `Default ${name}`,
+      reference: `LOC-${code}`,
+      type: typeMap.get(code)!,
+      parent,
+      active: true,
+      storageAssignment: true,
+    });
   }
+
+  const eqaRepo = dataSource.getRepository(EqaProgramEntity);
+  for (const [code, name, provider] of [
+    ['CAP', 'College of American Pathologists', 'CAP'],
+    ['RIQAS', 'Randox International Quality Assessment Scheme', 'Randox'],
+    ['NEQAS', 'UK National External Quality Assessment Service', 'NEQAS'],
+  ]) {
+    await upsertBy(eqaRepo, 'code', { code, name, provider, description: name, active: true });
+  }
+
+  const qaChecklistRepo = dataSource.getRepository(QaChecklistItemEntity);
+  for (const [code, name, category, required, sortOrder] of [
+    ['QA-IDENTITY', 'Patient identity verified against requisition', 'ORDER_ENTRY', true, 10],
+    ['QA-REQUISITION', 'Requisition complete and legible', 'ORDER_ENTRY', true, 20],
+    ['QA-CLINICAL', 'Clinical information and diagnosis recorded', 'ORDER_ENTRY', false, 30],
+    ['QA-CONSENT', 'Consent obtained (if required)', 'ORDER_ENTRY', false, 40],
+    ['QA-TUBES', 'Correct tubes collected for ordered tests', 'SPECIMEN', true, 50],
+    ['QA-QUANTITY', 'Sufficient sample quantity collected', 'SPECIMEN', true, 60],
+    ['QA-CONDITIONS', 'Collection conditions met (fasting, timing, etc.)', 'SPECIMEN', false, 70],
+    ['QA-LABEL', 'Labels printed and affixed to correct tubes', 'SPECIMEN', true, 80],
+    ['QA-STORAGE', 'Storage locations assigned and tracked', 'SPECIMEN', false, 90],
+    ['QA-ASSIGNED', 'All ordered tests assigned to samples', 'TEST', true, 100],
+    ['QA-RESULT', 'Results entered for all assigned tests', 'RESULT_ENTRY', true, 110],
+    ['QA-VALIDATION', 'Results validated by authorized reviewer', 'VALIDATION', true, 120],
+  ]) {
+    await upsertBy(qaChecklistRepo, 'code', { code, name, description: name, category, required, sortOrder, active: true });
+  }
+
+  await seedCsv(dataSource);
 }
 
 async function upsertBy(repo: any, key: string, payload: Record<string, any>): Promise<any> {

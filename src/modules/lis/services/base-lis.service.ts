@@ -62,6 +62,12 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     for (const relation of this.relations()) {
       if (!relation.includes('.')) {
         qb.leftJoinAndSelect(`${this.alias}.${relation}`, relation);
+      } else {
+        // e.g. items.testDefinition -> join items.testDefinition, alias last segment
+        const parts = relation.split('.');
+        const parentAlias = parts[0];
+        const childPath = parts[1];
+        qb.leftJoinAndSelect(`${parentAlias}.${childPath}`, childPath);
       }
     }
 
@@ -77,9 +83,12 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
       );
     }
 
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
+
     qb.orderBy(this.sortColumn(query.sortBy), query.sortOrder.toUpperCase() as 'ASC' | 'DESC')
-      .skip(query.offset)
-      .take(query.limit);
+      .skip((page - 1) * limit)
+      .take(limit);
 
     const [data, total] = await qb.getManyAndCount();
     return { data: data.map((item) => this.serialize(item)), total };
@@ -95,6 +104,11 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     for (const relation of this.relations()) {
       if (!relation.includes('.')) {
         qb.leftJoinAndSelect(`${this.alias}.${relation}`, relation);
+      } else {
+        const parts = relation.split('.');
+        const parentAlias = parts[0];
+        const childPath = parts[1];
+        qb.leftJoinAndSelect(`${parentAlias}.${childPath}`, childPath);
       }
     }
 
@@ -109,7 +123,19 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     const item = await this.findOne(id, tenant);
     const blocked = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'organizationId', 'organization_id', 'locationId', 'location_id']);
     for (const [key, value] of Object.entries(payload)) {
-      if (!blocked.has(key) && !key.endsWith('Id') && !key.endsWith('Ids')) {
+      if (!blocked.has(key)) {
+        (item as any)[key] = value;
+      }
+    }
+    await this.repo.save(item);
+    return this.findOne(id, tenant);
+  }
+
+  async replace(id: string, payload: any, tenant?: TenantContext): Promise<any> {
+    const item = await this.findOne(id, tenant);
+    const blocked = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'organizationId', 'organization_id', 'locationId', 'location_id']);
+    for (const [key, value] of Object.entries(payload)) {
+      if (!blocked.has(key)) {
         (item as any)[key] = value;
       }
     }

@@ -17,11 +17,11 @@ export class SamplesService extends BaseLisService<SampleEntity> {
   }
 
   protected relations(): string[] {
-    return ['order', 'status'];
+    return ['order', 'status', 'sampleType'];
   }
 
   protected searchColumns(): string[] {
-    return ['barcode'];
+    return ['barcode', 'collector', 'collectionConditions', 'notes'];
   }
 
   async create(payload: CreateSampleDto, tenant?: TenantContext): Promise<any> {
@@ -34,13 +34,17 @@ export class SamplesService extends BaseLisService<SampleEntity> {
         orderId: payload.orderId,
         barcode: payload.barcode,
         statusId: initialStatus.id,
-        sampleType: payload.sampleType ?? null,
+        sampleTypeId: payload.sampleTypeId ?? null,
         collector: payload.collector ?? null,
         collectionDate: payload.collectionDate ? new Date(payload.collectionDate) : null,
         collectionMethod: payload.collectionMethod ?? null,
         collectionConditions: payload.collectionConditions ?? null,
         quantity: payload.quantity ?? null,
         notes: payload.notes ?? null,
+        printStatus: payload.printStatus ?? 'PENDING',
+        printedAt: payload.printedAt ? new Date(payload.printedAt) : null,
+        storageLocationId: payload.storageLocationId ?? null,
+        storageNotes: payload.storageNotes ?? null,
         organizationId: tenant?.organizationId ?? null,
         locationId: tenant?.locationId ?? null,
       }),

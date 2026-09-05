@@ -1,4 +1,4 @@
-import { IsArray, IsNumber, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsNumber, IsObject, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
 class OrderItemDto {
@@ -7,7 +7,91 @@ class OrderItemDto {
 
   @IsOptional()
   @IsString()
+  sampleId?: string;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
+}
+
+class StepProgressDto {
+  @IsOptional()
+  @IsBoolean()
+  enter?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  collect?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  label?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  qa?: boolean;
+}
+
+class OrderSampleDto {
+  @IsString()
+  barcode!: string;
+
+  @IsOptional()
+  @IsString()
+  sampleTypeId?: string;
+
+  @IsOptional()
+  @IsString()
+  collector?: string;
+
+  @IsOptional()
+  @IsString()
+  collectionDate?: string;
+
+  @IsOptional()
+  @IsString()
+  receivedDate?: string;
+
+  @IsOptional()
+  @IsString()
+  collectionMethod?: string;
+
+  @IsOptional()
+  @IsString()
+  collectionConditions?: string;
+
+  @IsOptional()
+  @IsNumber()
+  quantity?: number;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @IsOptional()
+  @IsString()
+  storageLocationId?: string;
+
+  @IsOptional()
+  @IsString()
+  storageNotes?: string;
+
+  @IsOptional()
+  @IsString()
+  printStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  printedAt?: string;
+}
+
+class OrderAssignmentDto {
+  @IsString()
+  testDefinitionId!: string;
+
+  @IsNumber()
+  @Min(0)
+  sampleIndex!: number;
 }
 
 export class CreateOrderDto {
@@ -48,10 +132,52 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsString()
+  requesterName?: string;
+
+  @IsOptional()
+  @IsString()
+  requesterPhone?: string;
+
+  @IsOptional()
+  @IsString()
+  diagnosis?: string;
+
+  @IsOptional()
+  @IsString()
+  clinicalNotes?: string;
+
+  @IsOptional()
+  @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsString()
+  createdById?: string;
 
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => OrderItemDto)
   items!: OrderItemDto[];
+
+  @IsOptional()
+  @IsObject()
+  @ValidateNested()
+  @Type(() => StepProgressDto)
+  stepProgress?: StepProgressDto;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderSampleDto)
+  samples?: OrderSampleDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => OrderAssignmentDto)
+  assignments?: OrderAssignmentDto[];
+
+  @IsOptional()
+  @IsObject()
+  qaChecks?: Record<string, boolean>;
 }
