@@ -1,0 +1,14 @@
+openelisId,code,name,description,active
+1,EIA,Enzyme-linked immunoassay,EIA,true
+31,PCR,Polymerase Chain Reaction,,true
+32,STAIN,Stain,,true
+33,CULTURE,Culture,,true
+34,PROBE,Probe,,true
+35,BIOCHEMICAL,Biochemical,,true
+27,Diane Test,Diane Test,,true
+36,HPLC,High Pressure Liquid Chromatography,,true
+37,DNA SEQUENCING,DNA Sequencing,,true
+3,AUTO,Automated (Haiti),,true
+4,MANUAL,test done manually (Haiti),,true
+5,HIV_TEST_KIT,Uses Hiv test kit,,true
+6,SYPHILIS_TEST_KIT,Test kit for syphilis,,true

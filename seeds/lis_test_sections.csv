@@ -1,0 +1,17 @@
+openelisId,code,name,description,sortOrder,active
+156,user,Indicates user will chose test section,Indicates user will chose test section,2147483647,false
+136,Molecular Biology,Biologie Moleculaire,Biologie Moleculaire,50,true
+160,EID,Virologie_EID,Virologie_EID,2147483647,false
+161,VL,Virologie_VL,Virologie_VL,2147483647,false
+58,Parasitology,Parasitology logbook,Parasitology logbook,2147483647,false
+60,ECBU,ECBU logbook,ECBU logbook,2147483647,false
+56,Biochemistry,Chem logbook,Chem logbook,10,true
+36,Hematology,Hematology logbook,Hematology logbook,20,true
+59,Immunology,Immuno-Serology logbook,Immuno-Serology logbook,40,true
+61,VCT,VCT logbook,VCT logbook,2147483647,false
+57,Bacteria,Bacteria logbook,Bacteria logbook,2147483647,false
+96,Mycobacteriology,Mycobacteriology,Mycobacteriology,2147483647,false
+117,Serology-Immunology,Serology-Immunology test section,Serology-Immunology test section,30,true
+116,Hemto-Immunology,Hemto-Immunology test section,Hemto-Immunology test section,2147483647,false
+97,Serology,Serology Department,Serology Department,2147483647,true
+76,Virologie,Virologie,Virologie,2147483647,true

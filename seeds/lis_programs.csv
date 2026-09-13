@@ -1,0 +1,13 @@
+openelisId,code,name,description,active
+1,PRG-TESTING,Testing,Sample sent to lab for testing,true
+2,PRG-CONFIRMATION,Confirmation,Sample sent to lab for confirmation of result,true
+3,PRG-QUALITY_CONTROL,Quality Control,Sample is part of quality control,true
+4,PRG-EEQ,EEQ,Sample is part of external quality control,true
+21,LIND,Indeterminate Results,Indeterminate Results,true
+22,LSEQ,Cell Sequencing,Cell Sequencing,true
+23,LSPE,Special Request,Special Requests,true
+24,LARC,Antiretroviral Study,Antiretroviral Treatment Study,true
+25,LDBS,Early Infant Diagnosis for HIV Study,Early Infant Diagnosis for HIV Study,true
+26,LRTN,Routine HIV Testing,Routine HIV Tests,true
+27,LARC,Antiretroviral Followup Study,Antiretroviral Followup Study,true
+28,LARC,Viral Load Results,Viral Load Results,true

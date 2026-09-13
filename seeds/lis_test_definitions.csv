@@ -1,0 +1,99 @@
+openelisId,code,name,description,loinc,reportingDescription,methodId,uomId,testSectionId,isActive,isReportable,orderable,sortOrder,guid
+1,GPT/ALAT-Serum,Transaminases GPT (37°C),Transaminases GPT (37°C)(Serum),,TGP,,29,56,true,false,true,10,3a3661a1-a166-4590-90bc-937912789739
+2,GOT/ASAT-Serum,Transaminases G0T (37°C),Transaminases G0T (37°C)(Serum),,TGO,,29,56,true,false,true,20,71a02f4a-70b8-47da-9527-b6d604a92921
+3,Glucose-Plasma,Glucose,Glucose(Plasma),,Glycémie,,25,56,true,false,true,30,8410a83b-d09a-475d-a71c-1fcbcca94e58
+4,Creatinine-Serum,Créatinine,Créatinine(Serum),,Creatinine,,27,56,true,false,true,40,d7f672c4-52ea-4c26-bdf0-e9527d2ba95f
+5,Amylase-Serum,Amylase,Amylase(Serum),,Amylase,,29,56,true,false,true,50,b45cace4-5436-41c3-a4df-bcc9c11395eb
+6,Albumin-Urines,Albumine recherche miction,Albumine recherche miction(Urines),,Albumine,,25,56,true,false,true,60,3578f53d-8e5c-4e16-9dd3-65fe4d1a1f4d
+57,Murex-Serum,Determine,Determine(Sérum),,Determine-Sérum,,,117,true,false,true,480,585a6c2a-93ca-454f-ace3-f9a5fa61d33d
+58,Vironostika-Blood,Determine,Determine(Whole Blood),,Determine-Sang total,,,117,true,false,true,490,1f6ebdb4-0305-4fe6-8112-4b8cc8644298
+7,Total cholesterol-Serum,Cholestérol total,Cholestérol total(Serum),,Chol total,,25,56,true,false,true,70,4cd86c73-eca4-4968-a410-ee9d61f5da11
+8,HDL cholesterol-Serum,Cholestérol HDL,Cholestérol HDL(Serum),,Chol HDL,,25,56,true,false,true,80,eea822b4-5535-4e25-b9ef-fd492bef4349
+9,Triglicerides-Serum,Triglycérides,Triglycérides(Serum),,Triglycérides,,25,56,true,false,true,90,59321bd7-ab24-43a2-b47c-557f283548ff
+10,Beta HCG-Urines,Prolans (BHCG) urines de 24 h,Prolans (BHCG) urines de 24 h(Urines),,Béta HCG – 24 h,,25,56,true,false,true,100,fd50b89e-0f16-485f-a599-8ed989efa855
+11,Urine prenancy test-Urine,Test urinaire de grossesse,Test urinaire de grossesse(Urine),,Test Grossesse,,,56,true,false,true,110,18ee4ac6-9a1c-4bfa-ad8a-08968a412785
+12,Proteinuria dipstick-Urine,Protéinurie sur bandelette,Protéinurie sur bandelette(Urine),,Protéines,,,56,true,false,true,120,a44239e6-bd4d-4ffa-98eb-549b5102207a
+13,White Blood Cells Count (WBC)-Blood,Numération des globules blancs,Numération des globules blancs(Whole Blood),,GB,,31,36,true,false,true,130,e08bdd35-b7e4-4910-ae73-da5b6447e901
+14,Red Blood Cells Count (RBC)-Blood,Numération des globules rouges,Numération des globules rouges(Whole Blood),,GR,,36,36,true,false,true,140,25249ec2-0dbb-4a45-8c97-836c175ab183
+15,Hemoglobin-Blood,Hémoglobine,Hémoglobine(Whole Blood),,Hb,,12,36,true,false,true,150,466b3775-e117-4268-92a7-3d3de95d43b3
+16,Hematocrit-Blood,Hémotocrite,Hémotocrite(Whole Blood),,Hte,,5,36,true,false,true,160,4dea29d7-09aa-4ae4-92e9-aed3cde44462
+17,Medium corpuscular volum-Blood,Volume Globulaire Moyen,Volume Globulaire Moyen(Whole Blood),,VGM,,32,36,true,false,true,170,8980331d-7d69-4364-a793-e1855ea58360
+184,HCT,HCT,HCT,,HCT,,5,36,true,false,true,180,6792a51e-050b-4493-88ca-6f490c20cc5c
+186,GR,GR,GR,,GR,,41,36,true,false,true,160,fe6405c8-f96b-491b-95c9-b1f635339d6a
+187,Hb,Hb,Hb,,Hb,,12,36,true,false,true,170,cecea358-1fa0-44b2-8185-d8c010315f78
+188,VGM,VGM,VGM,,VGM,,32,36,true,false,true,190,ddce6c12-e319-455f-9f48-2f6ff363a246
+189,TCMH,TCMH,TCMH,,TCMH,,16,36,true,false,true,200,bf497153-ba88-4fe8-83ee-c144229d7628
+185,CCMH,CCMH,CCMH,,CCMH,,37,36,true,false,true,210,8ab87a81-6b6b-4d4b-b53b-fac57109e393
+190,CD3 percentage count,CD3 percentage count,CD3 percentage count,,CD3 percentage count,,5,59,true,false,true,270,ab362fc9-56bb-4f65-93d4-aed5bd8e3c8c
+191,CD4 percentage count,CD4 percentage count,CD4 percentage count,,CD4 percentage count,,5,59,true,false,true,280,cb6029e2-ff76-4df0-812d-88539cccba28
+192,CD4 absolute count,CD4 absolute count,CD4 absolute count,,CD4 absolute count,,45,59,true,false,true,290,a6718123-8d56-4103-9bbe-26b19306b83d
+193,NE#,NE#,NE#,,NE#,,,36,false,false,true,0,53736980-edf1-4abf-aa6b-7ab2dbf3e7c4
+194,MO#,MO#,MO#,,MO#,,,36,false,false,true,0,a11305b0-5c64-4661-941b-de4c3ef5e61e
+195,BA#,BA#,BA#,,BA#,,,36,false,false,true,0,ee97e167-6269-4095-99a1-19f5c75bb94b
+196,LY#,LY#,LY#,,LY#,,,36,false,false,true,0,496e3a90-968a-4c54-a101-72fb43d0b4ee
+197,EO#,EO#,EO#,,EO#,,,36,false,false,true,0,cd73ec28-f5d8-47d6-b079-e2ba8f506f8f
+198,Bioline,Bioline,Bioline,,Bioline,,,97,false,false,true,45,c98ef346-76e1-4d16-9964-71cca4396de5
+199,Innolia,Innolia,Innolia,,Innolia,,,97,true,false,true,40,de47583b-3dcc-46bf-bfa2-f03d8bc8670d
+18,TMCH-Blood,Teneur Corpusculaire Moyenne en Hémoglobine,Teneur Corpusculaire Moyenne en Hémoglobine(Whole Blood),,TCMH,,16,36,true,false,true,180,78e49ba2-72f8-49df-99f1-5fc2a3c0914c
+19,CMCH-Blood,Concentration Corpusculaire Moyenne en Hémoglobine,Concentration Corpusculaire Moyenne en Hémoglobine(Whole Blood),,CCMH,,37,36,true,false,true,190,a7d20177-a559-4829-ad77-94b9b1ff025b
+20,Platelets-Blood,Plaquette,Plaquette(Whole Blood),,Plaquettes,,31,36,true,false,true,200,17ff4ca7-b8b6-44a1-bae0-97f38affc35c
+21,Neutrophiles (%)-Blood,Polynucléaires Neutrophiles (%),Polynucléaires Neutrophiles (%)(Whole Blood),,PNN %,,5,36,true,false,true,210,c8979eb1-f975-4b77-9963-1328e95c5338
+22,Neutrophiles-Blood,Polynucléaires Neutrophiles (Abs),Polynucléaires Neutrophiles (Abs)(Whole Blood),,PNN (Abs),,33,36,true,false,true,220,5bf892d4-4b5d-4f7f-9fea-d54c8d9631df
+23,Eosinophiles (%)-Blood,Polynucléaires Eosinophiles (%),Polynucléaires Eosinophiles (%)(Whole Blood),,PNE (%),,5,36,true,false,true,230,0cdc2eed-19ea-4c36-beed-662273852506
+24,Eosinophiles-Blood,Polynucléaires Eosinophiles (Abs),Polynucléaires Eosinophiles (Abs)(Whole Blood),,PNE (Abs),,33,36,true,false,true,240,f0bbc211-66d2-4219-a377-79a9869a8413
+25,Basophiles (%)-Blood,Polynucléaires basophiles (%),Polynucléaires basophiles (%)(Whole Blood),,PNB (%),,5,36,true,false,true,250,e79dba96-ce3e-4b3c-945b-a73f7fa4b862
+26,Basophiles-Blood,Polynucléaires basophiles (Abs),Polynucléaires basophiles (Abs)(Whole Blood),,PNB (Abs),,33,36,true,false,true,260,febdc29b-78ac-48f8-afba-b7da2a1fb3c2
+27,Lymphocytes (%)-Blood,Lymphocytes (%),Lymphocytes (%)(Whole Blood),,Lympho (%),,5,36,true,false,true,270,7a4f53a3-b1ab-457b-b928-6c69f30aeb27
+28,Lymphocytes (Abs)-Blood,Lymphocytes (Abs),Lymphocytes (Abs)(Whole Blood),,Lympho (Abs),,33,36,true,false,true,280,e182fd13-38e6-4c5e-9ea7-f3635a957a78
+29,Monocytes (%)-Blood,Monocytes (%),Monocytes (%)(Whole Blood),,Mono (%),,5,36,true,false,true,290,79391ea9-9a96-484c-b8d7-c261a5cfffc0
+30,Monocytes (Abs)-Blood,Monocytes (Abs),Monocytes (Abs)(Whole Blood),,Mono (Abs),,33,36,true,false,true,300,545d87fd-7959-4d53-bf9a-c87a7d2af680
+31,HIV rapid test HIV-Serum,Test rapide HIV,Test rapide HIV(Serum),,VIH rapide-Serum,,,117,true,false,true,310,c200173b-d972-4e54-9c4f-5271290a8ed8
+32,HIV rapid test HIV-Plasma,Test rapide HIV,Test rapide HIV(Plasma),,VIH rapide-Plasm,,,117,true,false,true,320,d0ec0286-44cd-485d-ac0c-87d3664198a6
+33,HIV rapid test HIV-Blood,Test rapide HIV,Test rapide HIV(Whole Blood),,VIH rapide-SangT,,,117,true,false,true,330,0ac0b77e-672c-4eee-ae71-c05a0fee086b
+34,CD4 Absolute count (mm3)-Blood,Dénombrement des lymphocytes CD4 (mm3),Dénombrement des lymphocytes CD4 (mm3)(Whole Blood),,CD4  (Abs),,7,59,true,false,true,340,1d329af4-e1af-43c8-a533-5000bfdd868a
+159,Glycémie,Glycémie,Glycémie,,Glycémie,,25,56,true,false,true,260,3cf20999-c453-4246-b5d4-a39060101b79
+160,Créatininémie,Créatininémie,Créatininémie,,Créatininémie,,27,56,true,false,true,250,db25d5fe-4a7a-4e94-8dec-d57b8c13108a
+161,Transaminases ALTL,Transaminases ALTL,Transaminases ALTL,,Transaminases ALTL,,26,56,true,false,true,230,5f1c1a36-5147-45a8-8c7b-162ff43e5145
+162,p24 Ag,p24 Ag,p24 Ag,,p24 Ag,,,97,false,false,true,90,d215dd9d-16aa-4c1f-8289-94c4c7ed040b
+163,Western Blot 2,Western Blot 2,Western Blot 2,,Western Blot 2,,,97,false,false,true,80,74b2c59e-1ae0-4a3d-8451-6103b341c85c
+164,Western Blot 1,Western Blot 1,Western Blot 1,,Western Blot 1,,,97,false,false,true,70,a1eac50b-2ef8-4e90-b1a8-9748cf94af7d
+165,Genie II 10,Genie II 10,Genie II 10,,Genie II 10,,,97,false,false,true,60,d7aac329-ba07-4dfe-b8eb-9b8f679115fb
+166,Genie II 100,Genie II 100,Genie II 100,,Genie II 100,,,97,false,false,true,50,cd8b425e-b504-421a-a053-a0b62704c68d
+167,Genie II,Genie II,Genie II,,Genie II,,,97,false,false,true,40,0ae4006c-3aa9-41f2-9659-c3289c394e2b
+168,Vironostika,Vironostika,Vironostika,,Vironostika,,,97,true,false,true,30,2b97c89d-3f97-495c-90e1-d1c5c6a4d8fa
+169,Murex,Murex,Murex,,Murex,,,97,true,false,true,10,4b758755-a41e-45d3-8558-73a532253b71
+170,Integral,Integral,Integral,,Integral,,,97,true,false,true,20,61bc9b10-8d97-46bb-8e04-04eb1b990433
+172,CD4,CD4,CD4,,CD4,,,59,true,false,true,0,acfe5351-f531-4011-acd1-7c473b3f5da3
+173,Génotypage,Génotypage,Génotypage,,Génotypage,,,76,true,false,true,310,9df504a9-297c-4137-9928-4ad8101cd690
+174,Viral Load,Viral Load,Viral Load,,Viral Load,,30,76,true,false,true,320,b50d156e-0f6f-40cd-921c-4e831602a623
+175,DNA PCR,DNA PCR,DNA PCR,,DNA PCR,,,76,true,false,true,300,c1afd23c-c30f-42d7-af48-4321c069f48f
+176,Transaminases ASTL,Transaminases ASTL,Transaminases ASTL,,Transaminases ASTL,,26,56,true,false,true,240,1d094fe0-7fc7-42eb-ba54-15b24ba44ae9
+177,GB,GB,GB,,GB,,39,36,true,false,true,100,0e240569-c095-41c7-bfd2-049527452f16
+178,PLQ,PLQ,PLQ,,PLQ,,39,36,true,false,true,220,88b7d8d3-e82b-441f-aff3-1410ba2850a5
+179,Neut %,Neut %,Neut %,,Neut %,,5,36,true,false,true,110,0c25692f-a321-4e9c-9722-ca73f6625cb9
+180,Lymph %,Lymph %,Lymph %,,Lymph %,,5,36,true,false,true,120,eede92e7-d141-4c76-ab6e-b24ccfc84215
+35,CD4 percent  (%)-Blood,Dénombrement des lymphocytes  CD4 (%),Dénombrement des lymphocytes  CD4 (%)(Whole Blood),,CD4 %,,5,59,true,false,true,350,614652de-5e04-4fe7-a897-77d976317d2b
+36,HBsAg (Hepatitis B surface antigen)-Serum,HBs AG (antigén australia),HBs AG (antigén australia)(Serum),,Ag HBs,,,117,true,false,true,360,bc3ab337-3287-477b-9f52-cb0d0db4f06a
+37,Viral load-Blood,Mesure de la charge virale,Mesure de la charge virale(Whole Blood),,Charge virale VIH,,30,136,true,false,true,370,5c37ba62-1e04-46ab-8db6-82db9c6fbb5e
+38,ARV resistance-Blood,Detection de la resistance aux antiretroviraux,Detection de la resistance aux antiretroviraux(Whole Blood),,ARV res,,30,136,true,false,true,380,d83c247c-ccf4-4b9a-9016-357085672fac
+39,Western blot HIV-Serum,Western blot VIH,Western blot VIH(Serum),,WB-Serum,,,117,true,false,true,390,6e654c26-0a55-4867-a168-e55e6516fd1e
+40,Western blot HIV-Plasma,Western blot VIH,Western blot VIH(Plasma),,WB-Plasma,,,117,true,false,true,400,ace3f934-4b94-4fbe-8a82-1f4cec317347
+41,Bioline-Plasma,Bioline,Bioline(Plasma),,Bioline-Plasma,,,117,true,false,true,410,9b43af6e-25e4-4ebf-9724-d7bdf71a62c5
+42,Bioline-Serum,Bioline,Bioline(Serum),,Bioline-Serum,,,117,true,false,true,420,2e225bfc-e9a3-4ce2-aefb-16364cb2df3b
+43,Bioline-Blood,Bioline,Bioline(Whole Blood),,Bioline-Sang total,,,117,true,false,true,430,d7384982-3646-409e-a37d-019da248623f
+44,Genie III-Plasma,Genie III,Genie III(Plasma),,Genie III-Plasma,,,117,true,false,false,440,8a529b1a-72e6-4562-96ac-885b758f3280
+45,Genie III-Serum,Genie III,Genie III(Serum),,Genie III-Serum,,,117,true,false,false,450,098def0a-779e-496a-afd2-b19ca94c4c94
+46,Genie III-Blood,Genie III,Genie III(Whole Blood),,Genie III-Sang t,,,117,true,false,false,460,bea00384-ce9f-44ec-aca1-81c58edadb43
+47,Murex-Plasma,Murex,Murex(Plasma),,Murex-Plasma,,,117,true,false,true,470,74bb0da6-c7fe-44f8-810c-a72d38fd8fc7
+48,Murex-Serum,Murex,Murex(Serum),,Murex-Serum,,,117,true,false,true,480,2587b1f1-4b82-4d6f-a64e-e4fcc2230e1c
+49,Vironostika-Plasma,Vironostika,Vironostika(Plasma),,Vironostika-Plas,,,117,true,false,true,490,01f90ef2-6afe-4928-8249-2e64e4c02e88
+50,Vironostika-Serum,Vironostika,Vironostika(Serum),,Vironostika-Seru,,,117,true,false,true,500,704c585b-8e95-4550-9b11-573ab1c2cfb5
+51,P24 Ag-Plasma,P24 Ag,P24 Ag(Plasma),,P24 Ag-Plasma,,,117,true,false,true,510,ac8003af-6187-4ea0-8410-c320fb9d7dda
+52,P24 Ag-Serum,P24 Ag,P24 Ag(Serum),,P24 Ag-Serum,,,117,true,false,true,520,103fc942-99f1-4991-858b-bd66aa9c3374
+53,Stat-Pak-Plasma,Stat-Pak,Stat-Pak(Plasma),,Stat-Pak-Plasma,,,117,true,false,false,434,05ab0ed9-b9cf-4d9b-9362-8c4f4ebbd614
+54,Stat-Pak-Serum,Stat-Pak,Stat-Pak(Sérum),,Stat-Pak-Sérum,,,117,true,false,false,435,df43c9a3-adc5-4f39-946c-0fdc63692a8d
+55,Stat-Pak-Blood,Stat-Pak,Stat-Pak(Whole Blood),,Stat-Pak-Sang total,,,117,true,false,false,436,d7c06cb7-f038-4a73-a432-7ca9e25062c5
+56,Determine-Plasma,Determine,Determine(Plasma),,Determine-Plasma,,,117,true,false,true,470,679972ca-dce3-4e2d-bd13-8c70b24c299e
+181,Mono %,Mono %,Mono %,,Mono %,,5,36,true,false,true,130,9eece97f-04f3-4381-b378-2a9ac08a535a
+182,Eo %,Eo %,Eo %,,Eo %,,5,36,true,false,true,140,50b568e8-e9da-428d-9697-8080bca7377b
+183,Baso %,Baso %,Baso %,,Baso %,,5,36,true,false,true,150,a41fcfb4-e3ba-4add-ac5d-56fae322cb9e

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Final Laboratory Report</title>
+<style>
+  * { box-sizing: border-box; }
+  @page { size: A4; margin: 0; }
+  body {
+    margin: 0;
+    background: #e9eef0;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #172b35;
+  }
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 20px auto;
+    background: #fff;
+    padding: 10mm 13mm 8mm;
+    box-shadow: 0 2px 12px rgba(0,0,0,.18);
+    position: relative;
+  }
+  .header {
+    display: grid;
+    grid-template-columns: 82px 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .logo { width: 76px; height: 86px; object-fit: contain; }
+  .brand {
+    font-size: 25px;
+    font-weight: 800;
+    letter-spacing: .4px;
+    color: #12384b;
+  }
+  .brand span { color: #29a9ad; }
+  .subtitle {
+    font-size: 15px;
+    font-weight: 800;
+    color: #253c49;
+    margin-top: 1px;
+  }
+  .small {
+    font-size: 8.5px;
+    color: #61717a;
+    margin-top: 4px;
+  }
+  .branch {
+    font-size: 9px;
+    font-weight: 700;
+    margin-top: 3px;
+  }
+  .stripe {
+    height: 17px;
+    margin-top: 13px;
+    display: flex;
+    overflow: hidden;
+  }
+  .stripe .left { flex: 1; background: #086c83; clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%); }
+  .stripe .slashes {
+    width: 115px;
+    background: repeating-linear-gradient(120deg, #fff 0 13px, #12384b 13px 21px, #fff 21px 34px);
+  }
+  .stripe .right { flex: 1; background: #31adb0; clip-path: polygon(8% 0, 100% 0, 100% 100%, 0 100%); position: relative; }
+  .stripe .right b {
+    position: absolute; right: 18px; top: 2px;
+    color: #fff; font-size: 10px;
+  }
+  .patient-grid {
+    display: grid;
+    grid-template-columns: 1.25fr .9fr 1.45fr;
+    margin-top: 12px;
+    border-bottom: 1px solid #b8c7cc;
+    padding-bottom: 9px;
+  }
+  .patient, .collection, .barcodebox {
+    padding: 0 12px;
+    border-right: 1px solid #c5d0d4;
+  }
+  .patient { padding-left: 10px; }
+  .barcodebox { border-right: 0; }
+  .patient h2 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    color: #163b4c;
+  }
+  .meta { font-size: 10px; line-height: 1.55; color: #68777e; }
+  .meta strong { color: #314a56; }
+  .qr {
+    float: right;
+    width: 86px;
+    height: 86px;
+    object-fit: contain;
+    margin: -3px 4px 0 12px;
+  }
+  .collection { font-size: 10px; line-height: 1.55; }
+  .collection strong { color: #173e50; font-size: 11px; }
+  .barcode { width: 100%; height: 30px; object-fit: fill; margin-bottom: 4px; }
+  .barcodebox .code {
+    font-size: 8px; font-weight: 800; text-align: center; margin-bottom: 4px;
+  }
+  .dates { font-size: 8.5px; line-height: 1.55; color: #596970; }
+  .section-title {
+    margin-top: 11px;
+    border-top: 3px solid #116e82;
+    border-bottom: 2px solid #116e82;
+    padding: 5px 0 4px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #172e39;
+  }
+  .section-sub {
+    display:flex; justify-content:space-between;
+    font-size: 8px; color:#7b878c; margin: 5px 0 5px;
+  }
+  .summary {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:3px;
+    margin-bottom:5px;
+  }
+  .summary .card {
+    background:#e7f4f6;
+    border:1px solid #b8d1d6;
+    padding:7px;
+  }
+  .card .label { font-size:8px; font-weight:800; color:#55737c; }
+  .card .value { font-size:14px; font-weight:800; color:#08728a; margin-top:1px; }
+  .card .unit { font-size:7px; color:#5d6f76; }
+  table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:7.5px;
+  }
+  th {
+    background:#e9f0f2;
+    color:#42555e;
+    font-size:7.2px;
+    padding:4px 5px;
+    text-align:left;
+  }
+  td {
+    padding:3.4px 5px;
+    border-bottom:1px solid #d3dde0;
+    color:#354850;
+  }
+  td:nth-child(2) { font-weight:800; text-align:center; color:#172f3b; }
+  td:nth-child(3) { text-align:center; font-weight:800; }
+  td:nth-child(4), td:nth-child(5) { text-align:center; }
+  .group td {
+    background:#086c7e;
+    color:#fff;
+    font-weight:800;
+    font-size:7.5px;
+    padding:4px 6px;
+  }
+  .flag-low {
+    color:#d38b1e !important;
+    background:#fff1dc;
+    border-radius:3px;
+  }
+  .flag-high {
+    color:#d38b1e !important;
+    background:#fff1dc;
+    border-radius:3px;
+  }
+  .flag-normal {
+    color:#2aa5aa !important;
+    background:#e5f6f5;
+    border-radius:3px;
+  }
+  .note {
+    font-size:7.5px;
+    color:#66757c;
+    margin-top:7px;
+  }
+  .end {
+    text-align:center;
+    font-size:10px;
+    font-weight:800;
+    margin:11px 0 12px;
+  }
+  .signatures {
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:20px;
+    text-align:center;
+    font-size:7.5px;
+  }
+  .sigline {
+    border-top:1px solid #89969b;
+    padding-top:4px;
+    margin-top:17px;
+    font-weight:800;
+  }
+  .sigrole { margin-top:3px; font-size:8px; }
+  .footer {
+    margin-top:13px;
+    border-top:1px solid #aab8bd;
+    padding-top:5px;
+    font-size:7px;
+    color:#66777d;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .footerbar {
+    height:15px;
+    margin-top:3px;
+    background:linear-gradient(135deg,#0a6b80 0 20%,#fff 20% 24%,#0a6b80 24% 29%,#fff 29% 34%,#0a6b80 34% 40%,#fff 40% 45%,#0a6b80 45% 100%);
+    position:relative;
+  }
+  .footerbar::after {
+    content:"";
+    position:absolute; right:0; top:0; bottom:0; width:28%;
+    background:#31adb0;
+    clip-path:polygon(18% 0,100% 0,100% 100%,0 100%);
+  }
+  @media print {
+    body { background:#fff; }
+    .page { margin:0; box-shadow:none; }
+  }
+  @media (max-width: 800px) {
+    .page { width:100%; min-height:0; margin:0; padding:20px; }
+    .brand { font-size:20px; }
+    .patient-grid { grid-template-columns:1fr; }
+    .patient,.collection,.barcodebox { border-right:0; border-bottom:1px solid #c5d0d4; padding:10px 0; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="header">
+    <div class="logo"></div>
+    <div>
+      <div class="brand">THEQA <span>MEDICAL LABORATORY</span></div>
+      <div class="subtitle">Final Laboratory Report</div>
+      <div class="small">Accuracy Deserve Trust | Phone: +20 01234567890 | Email: results@theqlab.com | Website: theqlab.com</div>
+      <div class="branch">Main Branch, Healthcare District, Cairo</div>
+    </div>
+  </header>
+
+  <div class="stripe">
+    <div class="left"></div><div class="slashes"></div>
+    <div class="right"><b>theqlab.com</b></div>
+  </div>
+
+  <section class="patient-grid">
+    <div class="patient">
+      <h2>Youssef Mostafa</h2>
+      <div class="meta">Age : <strong>55 years</strong></div>
+      <div class="meta">Sex : <strong>Male</strong></div>
+      <div class="meta">File Number : <strong>1004</strong></div>
+    </div>
+    <div class="collection">
+      <strong>Sample Collected At:</strong><br>
+      Laboratory<br><br>
+      <strong>Ref. By:</strong> Dr. Sara Hassan
+    </div>
+    <div class="barcodebox">
+      <div class="code">THEQA-MKT-005-CBC</div>
+      <div class="dates">
+        <strong>Registered on:</strong> 09:16 21 Jun, 26<br>
+        <strong>Collected on:</strong> 09:16 21 Jun, 26<br>
+        <strong>Reported on:</strong> 09:16 21 Jun, 26
+      </div>
+    </div>
+  </section>
+
+  <div class="section-title">COMPLETE BLOOD COUNT (CBC)</div>
+  <div class="section-sub"><span></span><span>Whole blood / EDTA | Hematology | 16 test(s)</span></div>
+
+  <div class="section-sub"><strong style="font-size:11px;color:#333;margin:auto;">HEMATOLOGY</strong><span>Whole blood / EDTA</span></div>
+
+  <div class="summary">
+    <div class="card"><div class="label">HEMOGLOBIN</div><div class="value">12.4</div><div class="unit">g/dL</div></div>
+    <div class="card"><div class="label">WBC</div><div class="value">12.8</div><div class="unit">10³/µL</div></div>
+    <div class="card"><div class="label">PLATELETS</div><div class="value">520</div><div class="unit">10³/µL</div></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width:43%">INVESTIGATION</th>
+        <th style="width:15%">RESULT</th>
+        <th style="width:9%">FLAG</th>
+        <th style="width:20%">REFERENCE VALUE</th>
+        <th style="width:13%">UNIT</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="group"><td colspan="5">RBC / HEMOGLOBIN SERIES</td></tr>
+      <tr><td>Hematocrit <small>HCT</small></td><td>37</td><td class="flag-low">L</td><td>40 - 54</td><td>%</td></tr>
+      <tr><td>Hemoglobin <small>HGB</small></td><td>12.4</td><td class="flag-low">L</td><td>13 - 17</td><td>g/dL</td></tr>
+      <tr><td>Mean Corpuscular Hemoglobin <small>MCH</small></td><td>24.8</td><td class="flag-low">L</td><td>27 - 33</td><td>pg</td></tr>
+      <tr><td>Mean Corpuscular Hemoglobin Concentration <small>MCHC</small></td><td>31</td><td class="flag-low">L</td><td>32 - 36</td><td>g/dL</td></tr>
+      <tr><td>Mean Corpuscular Volume <small>MCV</small></td><td>78</td><td class="flag-low">L</td><td>80 - 100</td><td>fL</td></tr>
+      <tr><td>RBC Count</td><td>4.15</td><td class="flag-low">L</td><td>4.5 - 5.9</td><td>10^6/µL</td></tr>
+      <tr><td>Red Cell Distribution Width <small>RDW</small></td><td>16.2</td><td class="flag-high">H</td><td>11.5 - 14.5</td><td>%</td></tr>
+
+      <tr class="group"><td colspan="5">WBC / DIFFERENTIAL SERIES</td></tr>
+      <tr><td>Basophils Percent <small>BASO-PCT</small></td><td>0.5</td><td class="flag-normal">N</td><td>0 - 1</td><td>%</td></tr>
+      <tr><td>Eosinophils Percent <small>EOS-PCT</small></td><td>1.5</td><td class="flag-normal">N</td><td>1 - 6</td><td>%</td></tr>
+      <tr><td>Lymphocytes Absolute <small>LYMPH-ABS</small></td><td>2.0</td><td class="flag-normal">N</td><td>1.0 - 4.0</td><td>10^3/µL</td></tr>
+      <tr><td>Lymphocytes Percent <small>LYMPH-PCT</small></td><td>15</td><td class="flag-low">L</td><td>20 - 45</td><td>%</td></tr>
+      <tr><td>Monocytes Percent <small>MONO-PCT</small></td><td>5</td><td class="flag-normal">N</td><td>2 - 10</td><td>%</td></tr>
+      <tr><td>Neutrophils Absolute <small>NEUT-ABS</small></td><td>10.3</td><td class="flag-high">H</td><td>2.0 - 7.5</td><td>10^3/µL</td></tr>
+      <tr><td>Neutrophils Percent <small>NEUT-PCT</small></td><td>78</td><td class="flag-high">H</td><td>40 - 75</td><td>%</td></tr>
+      <tr><td>Total Leukocyte Count <small>WBC</small></td><td>12.8</td><td class="flag-high">H</td><td>4 - 11</td><td>10^3/µL</td></tr>
+
+      <tr class="group"><td colspan="5">PLATELET SERIES</td></tr>
+      <tr><td>Platelets <small>PLT</small></td><td>520</td><td class="flag-high">H</td><td>150 - 450</td><td>10^3/µL</td></tr>
+    </tbody>
+  </table>
+
+  <div class="note">CBC sections are grouped for one-page review. Morphology comments remain reviewable and should be correlated with smear findings where available.</div>
+
+  <div class="end">****End of Report****</div>
+
+  <div class="signatures">
+    <div>
+      <div class="sigline">Mona Samir</div>
+      <div>Medical Lab Technician</div>
+      <div class="sigrole">DMLT</div>
+    </div>
+    <div>
+      <div class="sigline">Dr. Farida Kamal</div>
+      <div>Clinical Pathologist</div>
+      <div class="sigrole">MD, Pathology</div>
+    </div>
+    <div>
+      <div class="sigline">Dr. Farida Kamal</div>
+      <div>Authorized Laboratory Signature</div>
+      <div class="sigrole">MD, Clinical Pathology</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Results relate only to the tested samples. Clinical interpretation must be correlated with patient history and physician assessment.</span>
+    <span>Generated by RxSoft LIMS</span>
+    <span>Page 1 of 1 pages</span>
+  </div>
+  <div class="footerbar"></div>
+</div>
+</body>
+</html>

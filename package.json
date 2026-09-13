@@ -9,7 +9,9 @@
     "start:dev": "nest start --watch",
     "start:prod": "node dist/main",
     "test:integration": "jest --config jest.integration.config.ts --runInBand",
-    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run.ts"
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run.ts",
+    "migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:revert": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:revert -d src/database/data-source.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^4.0.1",
@@ -22,9 +24,12 @@
     "@nestjs/swagger": "^11.2.0",
     "@nestjs/testing": "^11.1.19",
     "@nestjs/typeorm": "^11.0.0",
+    "axios": "^1.18.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
+    "csv-parse": "^7.0.2",
     "pg": "^8.13.1",
+    "puppeteer-core": "^25.5.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "sqlite3": "5.1.7",

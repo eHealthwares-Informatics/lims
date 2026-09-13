@@ -1,0 +1,175 @@
+openelisId,code,description,domain
+43,ANKLE,Ankle,H
+56,BONE_MARROW,Bone marrow,H
+62,BRAIN_MENINGES,Brain meninges,H
+88,EYE_LID,Eye lid,H
+91,FINGER_1ST,Finger 1st,H
+102,HEAD,Head,H
+109,LINGULA,Lingula,H
+205,TEST11,test11,A
+26,LEFT_LOWER_LOBE,Left Lower Lobe,H
+29,RIGHT_LOWER_LOBE,Right Lower Lobe,H
+30,MIDDLE_LOBE,Middle Lobe,H
+31,ACUTE,Acute,H
+32,CONVALESCENT,Convalescent,H
+33,ABDOMINAL,Abdominal,H
+34,AMNIOTIC,Amniotic,H
+35,JOINT,Joint,H
+36,PARACENTESIS,Paracentesis,H
+37,PERICARDIAL,Pericardial,H
+38,SYNOVIAL,Synovial,H
+39,THORACENTESIS,Thoracentesis,H
+40,VITREOUS,Vitreous,H
+41,ABDOMEN,Abdomen,H
+42,ADENOID,Adenoid,H
+44,AORTA,Aorta,H
+45,ARM,Arm,H
+46,AXILLA,Axilla,H
+47,BACK,Back,H
+48,BLADDER,Bladder,H
+49,BONE,Bone,A
+50,BONE_TIBIA,Bone tibia,H
+51,BONE_FEMUR,Bone femur,H
+52,BONE_COCCYX,Bone coccyx,H
+53,BONE_CLAVICLE,Bone clavicle,H
+54,BONE_CRANIUM,Bone cranium,H
+55,BONE_MASTOID,Bone mastoid,H
+57,BOWEL,Bowel,H
+58,BRAIN,Brain,H
+59,BRAIN_FRONTAL_LOBE,Brain frontal lobe,H
+60,BRAIN_SUBGALEAL,Brain subgaleal,H
+61,BRAIN_SUBDURAL,Brain subdural,H
+63,BRAIN_PARIETAL_LOBE,Brain parietal lobe,H
+64,BRAIN_DURA,Brain dura,H
+65,BRAIN_CEREBELLUM,Brain cerebellum,H
+66,BREAST,Breast,H
+67,BUCCAL,Buccal,H
+68,BUTTOCK,Buttock,H
+69,CALF,Calf,H
+70,CERVIX,Cervix,H
+71,CHEST,Chest,H
+72,COCCYX,Coccyx,H
+73,COLON,Colon,H
+74,COMPOSITE,Composite,H
+75,DISC,Disc,H
+76,DUODENUM,Duodenum,H
+77,EAR,Ear,H
+78,EAR_CANAL,Ear canal,H
+79,EAR_MASTOID,Ear mastoid,H
+80,ELBOW,Elbow,H
+81,ENDOMETRIUM,Endometrium,H
+82,EPIDURAL,Epidural,H
+83,EPIGLOTTIS,Epiglottis,H
+84,ESOPHAGUS,Esophagus,H
+85,EYE,Eye,H
+86,EYE_CORNEA,Eye cornea,H
+87,EYE_CONJUNCTIVA,Eye conjunctiva,H
+89,FACE,Face,H
+90,FINGER,Finger,H
+92,FINGER_2ND,Finger 2nd,H
+93,FINGER_3RD,Finger 3rd,H
+94,FINGER_4TH,Finger 4th,H
+95,FINGER_THUMB,Finger thumb,H
+96,FOOT,Foot,H
+97,GALL_BLADDER,Gall Bladder,H
+98,GASTRIC,Gastric,H
+99,HAIR,Hair,H
+100,HAND,Hand,H
+101,HARD_PALATE,Hard Palate,H
+103,HIP,Hip,H
+104,INTESTINE,Intestine,H
+105,JAW,Jaw,H
+106,KIDNEY,Kidney,H
+107,KNEE,Knee,H
+108,LEG,Leg,H
+110,LIP,Lip,H
+111,LUMBAR,Lumbar,H
+112,LUMBAR_DISC_SPACE,Lumbar Disc Space,H
+113,LYMPH_NODE,Lymph Node,H
+114,LYMPH_NODE_ABDOMINAL,Lymph Node abdominal,H
+115,LYMPH_NODE_AXILLARY,Lymph Node axillary,H
+116,LYMPH_NODE_CERVICAL,Lymph Node cervical,H
+117,LYMPH_NODE_HILAR,Lymph Node hilar,H
+118,LYMPH_NODE_INGUINAL,Lymph Node inguinal,H
+124,NECK,Neck,H
+125,NOSE,Nose,H
+140,RECTUM,Rectum,H
+143,SCROTUM,Scrotum,H
+144,SHIN,Shin,H
+174,WRIST,Wrist,H
+185,HEART,Heart,H
+189,LYMPH_NODE_MEDIASTINAL,Lymph Node mediastinal,H
+190,LYMPH_NODE_MESENTERIC,Lymph Node mesenteric,H
+191,LYMPH_NODE_PARATRACHEAL,Lymph Node paratracheal,H
+192,LYMPH_NODE_PORTAL,Lymph Node portal,H
+193,LYMPH_NODE_POST_AURICULAR,Lymph Node post auricular,H
+194,LYMPH_NODE_SUBMANDIBULAR,Lymph Node submandibular,H
+195,LYMPH_NODE_SUPRACLAVICULAR,Lymph Node supraclavicular,H
+196,LYMPH_NODE_TRACHEAL,Lymph Node tracheal,H
+197,PORT-A-CATH,Port-a-Cath,H
+198,IV_CATHETER_TIP,IV Catheter Tip,H
+120,URETHRAL,Urethral,H
+28,RIGHT_UPPER_LOBE,Right Upper Lobe,H
+119,CERVICAL,Cervical,H
+121,ORAL,Oral,H
+122,MANDIBLE,Mandible,H
+123,NAIL,Nail,H
+126,NOSE_ANTERIOR_NARES,Nose anterior nares,H
+127,NOSE_NARES,Nose nares,H
+128,NOSE_TURBINATE,Nose turbinate,H
+129,OMENTUM,Omentum,H
+130,PARASPINAL,Paraspinal,H
+131,PARATRACHEAL,Paratracheal,H
+132,PAROTID,Parotid,H
+133,PENIS,Penis,H
+134,PERICARDIUM,Pericardium,H
+135,PERINEUM,Perineum,H
+136,PERITONEUM,Peritoneum,H
+137,PLACENTA,Placenta,H
+138,PLEURA,Pleura,H
+139,PROSTATE,Prostate,H
+141,SACRUM,Sacrum,H
+142,SCALP,Scalp,H
+145,SHOULDER,Shoulder,H
+146,SINUS,Sinus,H
+147,SINUS_ETHMOID,Sinus ethmoid,H
+148,SINUS_FRONTAL,Sinus frontal,H
+149,SINUS_MAXILLARY,Sinus maxillary,H
+150,SINUS_SPHENOID,Sinus sphenoid,H
+151,SKIN,Skin,H
+152,SMALL_BOWEL,Small Bowel,H
+153,SPINE,Spine,H
+154,SPLEEN,Spleen,H
+155,STERNUM,Sternum,H
+156,STOMACH,Stomach,H
+157,SYNOVIUM,Synovium,H
+158,TESTICLE,Testicle,H
+159,THIGH,Thigh,H
+160,TOE,Toe,H
+161,TOE_GREAT,Toe great,H
+162,TOE_1ST,Toe 1st,H
+163,TOE_2ND,Toe 2nd,H
+164,TOE_3RD,Toe 3rd,H
+165,TOE_4TH,Toe 4th,H
+166,TOE_5TH,Toe 5th,H
+167,TOENAIL,Toenail,H
+168,TONGUE,Tongue,H
+169,TONSIL,Tonsil,H
+170,VAGINA,Vagina,H
+171,VEIN,Vein,H
+172,VERTEBRA,Vertebra,H
+173,VULVA,Vulva,H
+175,OTHER,Other,H
+176,MIDSTREAM,Midstream,H
+177,CLEAN_CATCH,Clean Catch,H
+178,CATHETER,Catheter,H
+179,FOLEY_CATHETER,Foley Catheter,H
+180,PERIPHERAL,Peripheral,H
+181,EDTA,EDTA,H
+182,WHOLE,Whole,H
+183,VENOUS,Venous,H
+184,CORD,Cord,H
+186,HEART_VALVE,Heart valve,H
+187,HEART_AORTIC,Heart aortic,H
+188,HEART_PERICARDIUM,Heart pericardium,H
+25,LEFT_UPPER_LOBE,Left Upper Lobe,H
