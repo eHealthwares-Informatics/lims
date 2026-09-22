@@ -52,6 +52,10 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     }
   }
 
+  protected listFilters(_query: Record<string, string>): Record<string, string> {
+    return {};
+  }
+
   async list(query: ListQueryDto & Record<string, string>, tenant?: TenantContext): Promise<ListResponse<T>> {
     const qb = this.repo
       .createQueryBuilder(this.alias)
@@ -81,6 +85,10 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
           }
         }),
       );
+    }
+
+    for (const [column, value] of Object.entries(this.listFilters(query))) {
+      qb.andWhere(`${this.alias}.${column} = :${column}`, { [column]: value });
     }
 
     const page = Number(query.page) || 1;

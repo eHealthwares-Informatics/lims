@@ -106,6 +106,10 @@ export class CreateOrderDto {
   @IsString()
   externalReference?: string;
 
+  @IsOptional()
+  @IsString()
+  source?: string;
+
   @IsString()
   patientName!: string;
 

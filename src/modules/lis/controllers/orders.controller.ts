@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query, StreamableFile } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { toCsv } from '../../../shared/utils/csv';
 import { OrdersService } from '../services/orders.service';
@@ -25,6 +25,7 @@ export class OrdersController {
 
   @Get()
   @ApiOperation({ summary: 'List orders with pagination' })
+  @ApiQuery({ name: 'source', required: false, description: 'Filter by order source (e.g. MANUAL, emr-encounter-request)' })
   async list(@Query() query: ListQueryDto, @Query() rawQuery: Record<string, string>, @CurrentUser() user: RequestUser) {
     const result = await this.service.list({ ...rawQuery, ...query } as any, tenantFromUser(user));
     return { data: result.data, meta: { page: query.page, limit: query.limit, total: result.total } };

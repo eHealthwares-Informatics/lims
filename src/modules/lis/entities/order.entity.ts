@@ -20,6 +20,9 @@ export class OrderEntity extends LisBaseEntity {
   @Column({ type: 'text', nullable: true })
   externalReference!: string | null;
 
+  @Column({ type: 'text', default: 'MANUAL' })
+  source!: string;
+
   @Column({ type: 'text' })
   patientName!: string;
 

@@ -159,4 +159,40 @@ describe('LIS Integration (Postgres)', () => {
             .get(`${base}/rejection-reasons/${createdIds['rejection-reasons']}`)
             .expect(404)
     })
+
+    it('creates an EMR-sourced order with EMRORD number and filters by source', async () => {
+        const emr = await request(app.getHttpServer())
+            .post(`${base}/orders`)
+            .send({
+                patientId: 'patient-emr-1',
+                patientName: 'Ada Obi',
+                internalReference: 'REQ-K1X2-ABCD',
+                source: 'emr-encounter-request',
+                items: [],
+            })
+            .expect(201)
+
+        expect(emr.body.orderNumber).toEqual('EMRORD-K1X2-ABCD')
+        expect(emr.body.source).toEqual('emr-encounter-request')
+
+        const manual = await request(app.getHttpServer())
+            .post(`${base}/orders`)
+            .send({
+                patientId: 'patient-manual-1',
+                patientName: 'Manually Entered',
+                items: [],
+            })
+            .expect(201)
+
+        expect(manual.body.source).toEqual('MANUAL')
+        expect(manual.body.orderNumber).toMatch(/^ORD-\d{8}-[A-Z0-9]{4}$/)
+
+        const list = await request(app.getHttpServer())
+            .get(`${base}/orders`)
+            .query({ source: 'emr-encounter-request' })
+            .expect(200)
+
+        expect(list.body.data.length).toBeGreaterThanOrEqual(1)
+        expect(list.body.data.map((o: any) => o.source)).toContain('emr-encounter-request')
+    })
 })

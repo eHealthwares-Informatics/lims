@@ -1,5 +1,0 @@
-code,name,description,sortOrder,isActive
-BILAN_BIOCHIMIQUE,Bilan Biochimique,Bilan Biochimique,10,true
-NFS,NFS,NFS,20,true
-SEROLOGIE_VIH,Serologie VIH,Serologie VIH,40,true
-TYPAGE_LYMPHOCYTAIRE,Typage lymphocytaire,Typage lymphocytaire,30,true

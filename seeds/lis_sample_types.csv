@@ -1,9 +1,0 @@
-openelisId,key,name,description,accessionCode,active,defaultQuantity,minimumQuantity,unit,containerType,collectionInstructions,storageRequirements
-5,Variable,Actual type will be selected by user,Actual type will be selected by user,VAR,false,,,,,,
-3,Plasma,Plasma,Plasma,PLA,true,5,3,mL,Plasma Separator Tube (PST),,2-8°C
-2,Serum,Serum,Serum,SER,true,5,3,mL,Serum Separator Tube (SST),,2-8°C
-4,Whole Bld,Whole Blood,Whole Blood,WHO,true,5,3,mL,EDTA Tube,,2-8°C
-1,Urines,Urines,Urines,URI,true,10,5,mL,Sterile urine container,Mid-stream sample,2-8°C
-24,Dry,Dry Tube,Dry Tube,DRY,true,,,,Plain/Dry Tube,,
-25,EDTA,EDTA Tube,EDTA Tube,EDT,true,4,2,mL,EDTA Tube,,2-8°C
-26,DBS,DBS,DBS,DBS,true,,,,DBS card,,

@@ -5,7 +5,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-options.interface';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
-import { DatabaseSeedService } from './database/seeding.service';
 import { HealthController } from './modules/health/controllers/health.controller';
 import { LisModule } from './modules/lis/lis.module';
 
@@ -35,7 +34,6 @@ import { LisModule } from './modules/lis/lis.module';
   ],
   controllers: [HealthController],
   providers: [
-    DatabaseSeedService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })

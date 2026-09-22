@@ -26,6 +26,10 @@ export class OrdersService extends BaseLisService<OrderEntity> {
     return ['orderNumber', 'patientId', 'patientName'];
   }
 
+  protected listFilters(query: Record<string, string>): Record<string, string> {
+    return query.source ? { source: query.source } : {};
+  }
+
   protected relations(): string[] {
     return ['priority', 'statusRef', 'items', 'items.testDefinition', 'items.sample', 'samples', 'samples.sampleType'];
   }
@@ -70,7 +74,11 @@ export class OrdersService extends BaseLisService<OrderEntity> {
     const now = new Date();
     const ymd = now.toISOString().slice(0, 10).replace(/-/g, '');
     const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    const orderNumber = `ORD-${ymd}-${rand}`;
+    const source = payload.source ?? 'MANUAL';
+    const orderNumber =
+      source === 'emr-encounter-request' && payload.internalReference
+        ? `EMRORD-${payload.internalReference.replace(/^REQ-/, '')}`
+        : `ORD-${ymd}-${rand}`;
     const initialStatus = await this.statuses.findByCode('ENTERED');
     const order = await this.repo.save(
       this.repo.create({
@@ -78,6 +86,7 @@ export class OrdersService extends BaseLisService<OrderEntity> {
         patientId: payload.patientId,
         internalReference: payload.internalReference ?? null,
         externalReference: payload.externalReference ?? null,
+        source,
         patientName: payload.patientName,
         patientAge: payload.patientAge ?? null,
         patientGender: payload.patientGender ?? null,
@@ -91,7 +100,10 @@ export class OrdersService extends BaseLisService<OrderEntity> {
         notes: payload.notes ?? null,
         stepProgress: payload.stepProgress ?? { enter: true, collect: false, label: false, qa: false },
         qaChecks: payload.qaChecks ?? {},
-        createdById: tenant?.userId ?? null,
+        createdById:
+          tenant?.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(tenant.userId)
+            ? tenant.userId
+            : null,
         status: 'ENTERED',
         statusId: initialStatus?.id ?? null,
         organizationId: tenant?.organizationId ?? null,
