@@ -14,6 +14,14 @@ export class OrderEntity extends LisBaseEntity {
   @Column({ type: 'text' })
   patientId!: string;
 
+  /** Human-facing patient identifier (MRN/patient number) from the EMR. */
+  @Column({ name: 'patient_number', type: 'text', nullable: true })
+  patientNumber!: string | null;
+
+  /** Stable cross-system reference (EMR request number). */
+  @Column({ name: 'reference_code', type: 'text', nullable: true })
+  referenceCode!: string | null;
+
   @Column({ type: 'text', nullable: true })
   internalReference!: string | null;
 

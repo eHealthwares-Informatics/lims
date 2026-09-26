@@ -17,6 +17,10 @@ export class OrderItemEntity extends LisBaseEntity {
   @Column({ name: 'test_definition_id', type: 'uuid' })
   testDefinitionId!: string;
 
+  /** Stable cross-system reference from the EMR request line. */
+  @Column({ name: 'reference_code', type: 'text', nullable: true })
+  referenceCode!: string | null;
+
   @ManyToOne(() => SampleEntity, { nullable: true })
   @JoinColumn({ name: 'sample_id' })
   sample!: SampleEntity | null;

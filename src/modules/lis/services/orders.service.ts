@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { OrderEntity, OrderItemEntity, SampleEntity } from '../entities';
+import { OrderEntity, OrderItemEntity, SampleEntity, TestDefinitionEntity, LoincEntity } from '../entities';
 import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { StatusesService } from './statuses.service';
@@ -15,11 +15,59 @@ export class OrdersService extends BaseLisService<OrderEntity> {
     @InjectRepository(OrderEntity) repo: Repository<OrderEntity>,
     @InjectRepository(OrderItemEntity) private readonly orderItemRepo: Repository<OrderItemEntity>,
     @InjectRepository(SampleEntity) private readonly sampleRepo: Repository<SampleEntity>,
+    @InjectRepository(TestDefinitionEntity) private readonly testDefinitionRepo: Repository<TestDefinitionEntity>,
+    @InjectRepository(LoincEntity) private readonly loincRepo: Repository<LoincEntity>,
     private readonly codes: CodeGeneratorService,
     private readonly statuses: StatusesService,
     private readonly statusHistory: StatusHistoryService,
   ) {
     super(repo, 'orders');
+  }
+
+  private static readonly UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+  /**
+   * Accepts a test definition id (uuid), a test definition code, or a LOINC
+   * code and resolves it to the test definition uuid. External callers (the
+   * EMR) send LOINC/test-definition codes because they never see LIS uuids.
+   */
+  private async resolveTestDefinitionIds(items: Array<{ testDefinitionId: string }>): Promise<string[]> {
+    const ids: string[] = [];
+    for (const item of items) {
+      const raw = (item.testDefinitionId ?? '').trim();
+      if (OrdersService.UUID_RE.test(raw)) {
+        ids.push(raw);
+        continue;
+      }
+      const byCode = await this.testDefinitionRepo.findOne({
+        where: { code: raw, deletedAt: null } as any,
+      });
+      if (byCode) {
+        ids.push(byCode.id);
+        continue;
+      }
+      const loinc = await this.loincRepo.findOne({
+        where: { code: raw, deletedAt: null } as any,
+      });
+      if (loinc) {
+        const viaLoinc = await this.testDefinitionRepo.findOne({
+          where: { loinc: { id: loinc.id }, deletedAt: null } as any,
+        });
+        if (viaLoinc) {
+          ids.push(viaLoinc.id);
+          continue;
+        }
+      }
+      const byName = await this.testDefinitionRepo.findOne({
+        where: { name: raw, deletedAt: null } as any,
+      });
+      if (byName) {
+        ids.push(byName.id);
+        continue;
+      }
+      throw new BadRequestException(`Unknown LIS test definition "${raw}"`);
+    }
+    return ids;
   }
 
   protected searchColumns(): string[] {
@@ -43,6 +91,7 @@ export class OrdersService extends BaseLisService<OrderEntity> {
         id: oi.id,
         testDefinitionId: oi.testDefinitionId ?? oi.testDefinition?.id,
         testDefinition: oi.testDefinition,
+        referenceCode: oi.referenceCode,
         sampleId: oi.sampleId,
         status: oi.status,
         resultValue: oi.resultValue,
@@ -104,6 +153,8 @@ export class OrdersService extends BaseLisService<OrderEntity> {
           tenant?.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(tenant.userId)
             ? tenant.userId
             : null,
+        patientNumber: payload.patientNumber ?? null,
+        referenceCode: payload.referenceCode ?? payload.internalReference ?? null,
         status: 'ENTERED',
         statusId: initialStatus?.id ?? null,
         organizationId: tenant?.organizationId ?? null,
@@ -113,11 +164,13 @@ export class OrdersService extends BaseLisService<OrderEntity> {
     const sampleIds = await this.createSamples(order, payload.samples ?? [], tenant);
     if (payload.items?.length) {
       const resolved = this.resolveSampleIds(payload.items, payload.assignments, sampleIds);
+      const testDefinitionIds = await this.resolveTestDefinitionIds(payload.items);
       await this.orderItemRepo.save(
         payload.items.map((item, i) =>
           this.orderItemRepo.create({
             order,
-            testDefinitionId: item.testDefinitionId,
+            testDefinitionId: testDefinitionIds[i],
+            referenceCode: item.referenceCode ?? null,
             sampleId: resolved[i],
             notes: item.notes ?? null,
             status: 'PENDING',
@@ -133,6 +186,8 @@ export class OrdersService extends BaseLisService<OrderEntity> {
 
   async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
     const order = await this.findOne(id, tenant);
+    if (payload.patientNumber !== undefined) order.patientNumber = payload.patientNumber as string | null;
+    if (payload.referenceCode !== undefined) order.referenceCode = payload.referenceCode as string | null;
     if (payload.status !== undefined) order.status = payload.status as string;
     if (payload.patientName !== undefined) order.patientName = payload.patientName as string;
     if (payload.patientAge !== undefined) order.patientAge = payload.patientAge as number | null;
@@ -224,17 +279,21 @@ export class OrdersService extends BaseLisService<OrderEntity> {
   }
 
   private async upsertItems(order: OrderEntity, items: any[], assignments: any[] | undefined, sampleIds: (string | null)[]): Promise<void> {
+    const testDefinitionIds = await this.resolveTestDefinitionIds(items);
     const existing = await this.orderItemRepo.find({ where: { order: { id: order.id } } });
     const byTest = new Map(existing.map((i) => [i.testDefinitionId, i]));
-    const wanted = new Set(items.map((i) => i.testDefinitionId));
+    const wanted = new Set(testDefinitionIds);
     const assignmentByTest = new Map<string, number>();
     for (const a of assignments ?? []) assignmentByTest.set(a.testDefinitionId, a.sampleIndex);
-    for (const item of items) {
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const resolvedId = testDefinitionIds[i];
       const index = assignmentByTest.get(item.testDefinitionId);
       const sampleId = typeof index === 'number' ? sampleIds[index] ?? null : item.sampleId ?? null;
-      const found = byTest.get(item.testDefinitionId);
+      const found = byTest.get(resolvedId);
       const data = {
-        testDefinitionId: item.testDefinitionId,
+        testDefinitionId: resolvedId,
+        referenceCode: item.referenceCode ?? found?.referenceCode ?? null,
         sampleId,
         notes: item.notes ?? found?.notes ?? null,
         status: found?.status ?? 'PENDING',
@@ -372,6 +431,8 @@ export class OrdersService extends BaseLisService<OrderEntity> {
       ...order,
       orderNumber,
       patientId: payload.patientId,
+      patientNumber: payload.patientNumber ?? order.patientNumber,
+      referenceCode: payload.referenceCode ?? order.referenceCode,
       internalReference: payload.internalReference ?? null,
       externalReference: payload.externalReference ?? null,
       patientName: payload.patientName,

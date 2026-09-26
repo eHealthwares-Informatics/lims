@@ -12,6 +12,11 @@ class OrderItemDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  /** Stable cross-system reference from the EMR request line. */
+  @IsOptional()
+  @IsString()
+  referenceCode?: string;
 }
 
 class StepProgressDto {
@@ -97,6 +102,16 @@ class OrderAssignmentDto {
 export class CreateOrderDto {
   @IsString()
   patientId!: string;
+
+  /** Human-facing patient identifier (MRN/patient number) from the EMR. */
+  @IsOptional()
+  @IsString()
+  patientNumber?: string;
+
+  /** Stable cross-system reference for the order (EMR request number). */
+  @IsOptional()
+  @IsString()
+  referenceCode?: string;
 
   @IsOptional()
   @IsString()
