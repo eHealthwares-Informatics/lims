@@ -82,6 +82,7 @@ import { EqaEnrollmentsService } from './services/eqa-enrollments.service';
 import { EqaResultsService } from './services/eqa-results.service';
 import { QaChecklistItemsService } from './services/qa-checklist-items.service';
 import { QaHoldsService } from './services/qa-holds.service';
+import { TatService } from './services/tat.service';
 import { AnalytesService } from './services/analytes.service';
 import { ObservationHistoryTypesService } from './services/observation-history-types.service';
 import { ReferenceTablesService } from './services/reference-tables.service';
@@ -123,6 +124,7 @@ import { EqaProgramsController } from './controllers/eqa-programs.controller';
 import { EqaEnrollmentsController } from './controllers/eqa-enrollments.controller';
 import { EqaResultsController } from './controllers/eqa-results.controller';
 import { QaChecklistItemsController } from './controllers/qa-checklist-items.controller';
+import { TatController } from './controllers/tat.controller';
 
 @Module({
   imports: [
@@ -208,6 +210,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
     ReferenceTablesController,
     SourceOfSamplesController,
     QaChecklistItemsController,
+    TatController,
   ],
   providers: [
     CodeGeneratorService,
@@ -253,6 +256,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
     SourceOfSamplesService,
     QaChecklistItemsService,
     QaHoldsService,
+    TatService,
   ],
   exports: [
     CodeGeneratorService,

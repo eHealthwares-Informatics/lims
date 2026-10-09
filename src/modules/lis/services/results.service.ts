@@ -7,6 +7,7 @@ import { StatusesService } from './statuses.service';
 import { StatusHistoryService } from './status-history.service';
 import { ResultSignaturesService } from './result-signatures.service';
 import { CreateResultDto } from '../dto/result.dto';
+import { computeResultTat } from './tat-calculator';
 import { TenantContext } from '../../../common/tenant-context';
 
 @Injectable()
@@ -33,7 +34,23 @@ export class ResultsService extends BaseLisService<ResultEntity> {
   }
 
   protected relations(): string[] {
-    return ['orderItem', 'unit', 'referenceRange', 'statusRef'];
+    return [
+      'orderItem',
+      'orderItem.order',
+      'orderItem.order.priority',
+      'orderItem.testDefinition',
+      'unit',
+      'referenceRange',
+      'statusRef',
+    ];
+  }
+
+  /** TAT summary (actual vs. configured target) attached to every result row. */
+  protected serialize(item: ResultEntity): any {
+    return {
+      ...item,
+      tat: computeResultTat(item),
+    };
   }
 
   async create(payload: CreateResultDto, tenant?: TenantContext): Promise<any> {

@@ -90,6 +90,18 @@ export class TestDefinitionEntity extends LisBaseEntity {
   @Column({ type: 'int', nullable: true })
   turnaroundTimeMinutes!: number | null;
 
+  /** TAT target (minutes) for routine-priority orders. */
+  @Column({ name: 'tat_routine_minutes', type: 'int', nullable: true })
+  tatRoutineMinutes!: number | null;
+
+  /** TAT target (minutes) for STAT-priority orders. */
+  @Column({ name: 'tat_stat_minutes', type: 'int', nullable: true })
+  tatStatMinutes!: number | null;
+
+  /** TAT target (minutes) for emergency-priority orders. */
+  @Column({ name: 'tat_emergency_minutes', type: 'int', nullable: true })
+  tatEmergencyMinutes!: number | null;
+
   @Column({ type: 'int', nullable: true })
   testDurationMinutes!: number | null;
 
