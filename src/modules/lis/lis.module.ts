@@ -44,6 +44,7 @@ import {
   UnitOfMeasurementEntity,
 } from './entities';
 import { CodeGeneratorService } from './services/code-generator.service';
+import { BarcodeService } from './services/barcode.service';
 import { ReportPdfService } from './services/report-pdf.service';
 import { ReportDeliveryService } from './services/report-delivery.service';
 import { LoincService } from './services/loinc.service';
@@ -90,6 +91,7 @@ import { ObservationHistoryTypesController } from './controllers/observation-his
 import { ReferenceTablesController } from './controllers/reference-tables.controller';
 import { SourceOfSamplesController } from './controllers/source-of-samples.controller';
 import { CodeGeneratorController } from './controllers/code-generator.controller';
+import { BarcodeController } from './controllers/barcode.controller';
 import { LoincController } from './controllers/loinc.controller';
 import { SampleTypesController } from './controllers/sample-types.controller';
 import { RejectionReasonsController } from './controllers/rejection-reasons.controller';
@@ -170,6 +172,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
   ],
   controllers: [
     CodeGeneratorController,
+    BarcodeController,
     LoincController,
     SampleTypesController,
     RejectionReasonsController,
@@ -208,6 +211,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
   ],
   providers: [
     CodeGeneratorService,
+    BarcodeService,
     ReportPdfService,
     ReportDeliveryService,
     LoincService,
