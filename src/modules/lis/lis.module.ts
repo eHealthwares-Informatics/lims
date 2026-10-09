@@ -24,6 +24,7 @@ import {
   ProgramEntity,
   QaChecklistItemEntity,
   QaHoldEventEntity,
+  ResultAmendmentEntity,
   QcAlertEntity,
   QcLotEntity,
   QcResultEntity,
@@ -65,6 +66,7 @@ import { OrdersService } from './services/orders.service';
 import { ResultsService } from './services/results.service';
 import { ResultWebhookService } from './services/result-webhook.service';
 import { ResultSignaturesService } from './services/result-signatures.service';
+import { ResultAmendmentsService } from './services/result-amendments.service';
 import { SamplesService } from './services/samples.service';
 import { StatusesService } from './services/statuses.service';
 import { StatusHistoryService } from './services/status-history.service';
@@ -157,6 +159,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
       StatusHistoryEntity,
       QaChecklistItemEntity,
       QaHoldEventEntity,
+      ResultAmendmentEntity,
       QcLotEntity,
       QcResultEntity,
       QcAlertEntity,
@@ -227,6 +230,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
     ResultsService,
     ResultSignaturesService,
     ResultWebhookService,
+    ResultAmendmentsService,
     SamplesService,
     StatusesService,
     StatusHistoryService,

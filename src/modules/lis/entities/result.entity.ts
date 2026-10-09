@@ -58,4 +58,13 @@ export class ResultEntity extends LisBaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   acknowledgedAt!: string | null;
+
+  @Column({ name: 'superseded_by_id', type: 'uuid', nullable: true })
+  supersededById!: string | null;
+
+  @Column({ name: 'is_latest', type: 'boolean', default: true })
+  isLatest!: boolean;
+
+  @Column({ name: 'amendment_number', type: 'integer', default: 0 })
+  amendmentNumber!: number;
 }

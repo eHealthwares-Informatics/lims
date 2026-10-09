@@ -4,9 +4,11 @@ import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { toCsv } from '../../../shared/utils/csv';
 import { ResultsService } from '../services/results.service';
 import { QaHoldsService } from '../services/qa-holds.service';
+import { ResultAmendmentsService } from '../services/result-amendments.service';
 import { StatusHistoryService } from '../services/status-history.service';
 import { CreateResultDto } from '../dto/result.dto';
 import { QaHoldDto, QaReleaseDto } from '../dto/qa-hold.dto';
+import { AmendResultDto } from '../dto/result-amendment.dto';
 import { TransitionResultStatusDto } from '../dto/sample.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -18,6 +20,7 @@ export class ResultsController {
   constructor(
     private readonly service: ResultsService,
     private readonly qaHolds: QaHoldsService,
+    private readonly amendments: ResultAmendmentsService,
     private readonly statusHistory: StatusHistoryService,
   ) {}
 
@@ -70,6 +73,25 @@ export class ResultsController {
   @ApiOperation({ summary: 'Release a result from QA hold' })
   async releaseFromQa(@Param('id') id: string, @Body() dto: QaReleaseDto, @CurrentUser() user: RequestUser) {
     return this.qaHolds.releaseResult(id, dto.reason ?? null, dto.reviewerId, tenantFromUser(user));
+  }
+
+  @Post(':id/amend')
+  @ApiOperation({ summary: 'Amend a result (creates new superseding result record)' })
+  async amend(@Param('id') id: string, @Body() dto: AmendResultDto, @CurrentUser() user: RequestUser) {
+    return this.amendments.amend(id, dto, tenantFromUser(user));
+  }
+
+  @Get(':id/amendments')
+  @ApiOperation({ summary: 'Get amendment history for a result' })
+  async getAmendments(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    const data = await this.amendments.getAmendmentHistory(id, tenantFromUser(user));
+    return { data };
+  }
+
+  @Get(':id/amendment-timeline')
+  @ApiOperation({ summary: 'Get full amendment timeline (original + amendments + supersededBy)' })
+  async getAmendmentTimeline(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.amendments.getFullTimeline(id, tenantFromUser(user));
   }
 
   @Post()
