@@ -23,6 +23,7 @@ import {
   PriorityEntity,
   ProgramEntity,
   QaChecklistItemEntity,
+  QaHoldEventEntity,
   QcAlertEntity,
   QcLotEntity,
   QcResultEntity,
@@ -77,6 +78,7 @@ import { EqaProgramsService } from './services/eqa-programs.service';
 import { EqaEnrollmentsService } from './services/eqa-enrollments.service';
 import { EqaResultsService } from './services/eqa-results.service';
 import { QaChecklistItemsService } from './services/qa-checklist-items.service';
+import { QaHoldsService } from './services/qa-holds.service';
 import { AnalytesService } from './services/analytes.service';
 import { ObservationHistoryTypesService } from './services/observation-history-types.service';
 import { ReferenceTablesService } from './services/reference-tables.service';
@@ -154,6 +156,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
       StatusEntity,
       StatusHistoryEntity,
       QaChecklistItemEntity,
+      QaHoldEventEntity,
       QcLotEntity,
       QcResultEntity,
       QcAlertEntity,
@@ -241,6 +244,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
     ReferenceTablesService,
     SourceOfSamplesService,
     QaChecklistItemsService,
+    QaHoldsService,
   ],
   exports: [
     CodeGeneratorService,

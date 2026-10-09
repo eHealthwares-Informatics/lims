@@ -24,6 +24,14 @@ export class ResultsService extends BaseLisService<ResultEntity> {
     return ['orderItemId', 'value'];
   }
 
+  protected listFilters(query: Record<string, string>): Record<string, string> {
+    const filters: Record<string, string> = {};
+    if (query.status) {
+      filters.status = query.status;
+    }
+    return filters;
+  }
+
   protected relations(): string[] {
     return ['orderItem', 'unit', 'referenceRange', 'statusRef'];
   }

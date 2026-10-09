@@ -3,8 +3,10 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { toCsv } from '../../../shared/utils/csv';
 import { ResultsService } from '../services/results.service';
+import { QaHoldsService } from '../services/qa-holds.service';
 import { StatusHistoryService } from '../services/status-history.service';
 import { CreateResultDto } from '../dto/result.dto';
+import { QaHoldDto, QaReleaseDto } from '../dto/qa-hold.dto';
 import { TransitionResultStatusDto } from '../dto/sample.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -15,6 +17,7 @@ import { tenantFromUser } from '../../../common/tenant-context';
 export class ResultsController {
   constructor(
     private readonly service: ResultsService,
+    private readonly qaHolds: QaHoldsService,
     private readonly statusHistory: StatusHistoryService,
   ) {}
 
@@ -41,6 +44,32 @@ export class ResultsController {
   async getStatusHistory(@Param('id') id: string, @CurrentUser() user: RequestUser) {
     const data = await this.statusHistory.findByEntity('Result', id, tenantFromUser(user));
     return { data };
+  }
+
+  @Get('/qa/hold')
+  @ApiOperation({ summary: 'List all results currently on QA hold' })
+  async listQaHeld(@CurrentUser() user: RequestUser) {
+    const data = await this.qaHolds.getHeldResults(tenantFromUser(user));
+    return { data };
+  }
+
+  @Get(':id/qa-hold-history')
+  @ApiOperation({ summary: 'Get QA hold event history for a result' })
+  async getQaHoldHistory(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    const data = await this.qaHolds.getHoldHistory(id, tenantFromUser(user));
+    return { data };
+  }
+
+  @Post(':id/qa-hold')
+  @ApiOperation({ summary: 'Place a result on QA hold' })
+  async holdForQa(@Param('id') id: string, @Body() dto: QaHoldDto, @CurrentUser() user: RequestUser) {
+    return this.qaHolds.holdResult(id, dto.reason, dto.reviewerId, tenantFromUser(user));
+  }
+
+  @Post(':id/qa-release')
+  @ApiOperation({ summary: 'Release a result from QA hold' })
+  async releaseFromQa(@Param('id') id: string, @Body() dto: QaReleaseDto, @CurrentUser() user: RequestUser) {
+    return this.qaHolds.releaseResult(id, dto.reason ?? null, dto.reviewerId, tenantFromUser(user));
   }
 
   @Post()
