@@ -86,6 +86,21 @@ export class CreateTestDefinitionDto {
   @IsOptional()
   turnaroundTimeMinutes?: number;
 
+  @ApiPropertyOptional({ description: 'TAT target (minutes) for routine-priority orders' })
+  @IsInt()
+  @IsOptional()
+  tatRoutineMinutes?: number;
+
+  @ApiPropertyOptional({ description: 'TAT target (minutes) for STAT-priority orders' })
+  @IsInt()
+  @IsOptional()
+  tatStatMinutes?: number;
+
+  @ApiPropertyOptional({ description: 'TAT target (minutes) for emergency-priority orders' })
+  @IsInt()
+  @IsOptional()
+  tatEmergencyMinutes?: number;
+
   @ApiPropertyOptional()
   @IsInt()
   @IsOptional()
