@@ -35,3 +35,5 @@ export * from './observation-history-type.entity';
 export * from './reference-table.entity';
 export * from './source-of-sample.entity';
 export * from './qa-checklist-item.entity';
+export * from './qa-hold-event.entity';
+export * from './result-amendment.entity';

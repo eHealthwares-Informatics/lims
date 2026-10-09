@@ -5,7 +5,7 @@
 | Phase | Items | Done | Percent |
 |---|---|---|---|
 | Phase 1 — CRUD & Integration | ~30 | 30 | 100% |
-| Phase 2 — Workflow & Validation | ~20 | 0 | 0% |
+| Phase 2 — Workflow & Validation | ~20 | 13 | 65% |
 | Phase 3 — Reports & QC | ~15 | 0 | 0% |
 | Phase 4 — Advanced Features | ~15 | 0 | 0% |
 
@@ -30,11 +30,11 @@ All 23 backend entities (12 reference + 11 core) with full CRUD, JWT auth, inter
 | Result signatures (two-level) | ✅ Done | Technical + supervisory approval, enforced on transition |
 | Validation dashboard | ✅ Done | Status-filtered view with counts |
 | Result signatures frontend | ✅ Done | schema.ts + index.tsx |
-| QA holds | 🔜 Next | Hold/release results with QA events |
-| Result correction/revision tracking | ⏳ Planned | Amend and supersede workflow |
+| QA holds | ✅ Done | Hold/release results with QA events (#66/#67) |
+| Result correction/revision tracking | ✅ Done | Amend and supersede workflow (#68/#69) |
+| Barcode label generation | ✅ Done | Label preview via bwip-js (#25/#26) |
 | Sample storage hierarchy | ⏳ Planned | Room → Device → Rack → Shelf → Box |
 | Shipment / referral tracking | ⏳ Planned | Send-out workflow |
-| Barcode label generation | ⏳ Planned | Label configuration and print |
 
 ### Design Decisions (Phase 2)
 

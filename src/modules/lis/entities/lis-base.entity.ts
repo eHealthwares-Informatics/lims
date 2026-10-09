@@ -22,5 +22,5 @@ export abstract class LisBaseEntity {
 
 export type OrderStatus = 'ENTERED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 export type SampleStatus = 'COLLECTED' | 'RECEIVED' | 'IN_PROGRESS' | 'DISPOSED' | 'REJECTED';
-export type ResultStatus = 'PENDING' | 'TECHNICAL_REVIEW' | 'FINALIZED' | 'CANCELLED';
+export type ResultStatus = 'PENDING' | 'TECHNICAL_REVIEW' | 'FINALIZED' | 'CANCELLED' | 'QA_HOLD';
 export type StatusDomain = 'ORDER' | 'SAMPLE' | 'RESULT';

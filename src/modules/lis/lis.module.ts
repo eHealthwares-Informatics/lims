@@ -23,6 +23,8 @@ import {
   PriorityEntity,
   ProgramEntity,
   QaChecklistItemEntity,
+  QaHoldEventEntity,
+  ResultAmendmentEntity,
   QcAlertEntity,
   QcLotEntity,
   QcResultEntity,
@@ -42,6 +44,7 @@ import {
   UnitOfMeasurementEntity,
 } from './entities';
 import { CodeGeneratorService } from './services/code-generator.service';
+import { BarcodeService } from './services/barcode.service';
 import { ReportPdfService } from './services/report-pdf.service';
 import { ReportDeliveryService } from './services/report-delivery.service';
 import { LoincService } from './services/loinc.service';
@@ -64,6 +67,7 @@ import { OrdersService } from './services/orders.service';
 import { ResultsService } from './services/results.service';
 import { ResultWebhookService } from './services/result-webhook.service';
 import { ResultSignaturesService } from './services/result-signatures.service';
+import { ResultAmendmentsService } from './services/result-amendments.service';
 import { SamplesService } from './services/samples.service';
 import { StatusesService } from './services/statuses.service';
 import { StatusHistoryService } from './services/status-history.service';
@@ -77,6 +81,7 @@ import { EqaProgramsService } from './services/eqa-programs.service';
 import { EqaEnrollmentsService } from './services/eqa-enrollments.service';
 import { EqaResultsService } from './services/eqa-results.service';
 import { QaChecklistItemsService } from './services/qa-checklist-items.service';
+import { QaHoldsService } from './services/qa-holds.service';
 import { AnalytesService } from './services/analytes.service';
 import { ObservationHistoryTypesService } from './services/observation-history-types.service';
 import { ReferenceTablesService } from './services/reference-tables.service';
@@ -86,6 +91,7 @@ import { ObservationHistoryTypesController } from './controllers/observation-his
 import { ReferenceTablesController } from './controllers/reference-tables.controller';
 import { SourceOfSamplesController } from './controllers/source-of-samples.controller';
 import { CodeGeneratorController } from './controllers/code-generator.controller';
+import { BarcodeController } from './controllers/barcode.controller';
 import { LoincController } from './controllers/loinc.controller';
 import { SampleTypesController } from './controllers/sample-types.controller';
 import { RejectionReasonsController } from './controllers/rejection-reasons.controller';
@@ -154,6 +160,8 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
       StatusEntity,
       StatusHistoryEntity,
       QaChecklistItemEntity,
+      QaHoldEventEntity,
+      ResultAmendmentEntity,
       QcLotEntity,
       QcResultEntity,
       QcAlertEntity,
@@ -164,6 +172,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
   ],
   controllers: [
     CodeGeneratorController,
+    BarcodeController,
     LoincController,
     SampleTypesController,
     RejectionReasonsController,
@@ -202,6 +211,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
   ],
   providers: [
     CodeGeneratorService,
+    BarcodeService,
     ReportPdfService,
     ReportDeliveryService,
     LoincService,
@@ -224,6 +234,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
     ResultsService,
     ResultSignaturesService,
     ResultWebhookService,
+    ResultAmendmentsService,
     SamplesService,
     StatusesService,
     StatusHistoryService,
@@ -241,6 +252,7 @@ import { QaChecklistItemsController } from './controllers/qa-checklist-items.con
     ReferenceTablesService,
     SourceOfSamplesService,
     QaChecklistItemsService,
+    QaHoldsService,
   ],
   exports: [
     CodeGeneratorService,
