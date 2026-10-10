@@ -50,11 +50,18 @@ export class UsersProxyService implements OnApplicationBootstrap {
   }
 
   async onApplicationBootstrap(): Promise<void> {
+    // Never hold up app bootstrap on the identity service: fire-and-warm with
+    // a bounded timeout so tests / offline environments start instantly.
+    this.warmUserCache();
+  }
+
+  private async warmUserCache(): Promise<void> {
     try {
       const { data } = await firstValueFrom(
         this.http.get(`${this.baseUrl}/users`, {
           headers: { 'x-api-key': this.internalApiKey },
           params: { limit: '1000' },
+          timeout: 10_000,
         }),
       );
       const users = Array.isArray(data) ? data : data?.data ?? [];

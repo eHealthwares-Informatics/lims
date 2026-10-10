@@ -2696,6 +2696,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bwip-js@npm:^4.11.4":
+  version: 4.11.4
+  resolution: "bwip-js@npm:4.11.4"
+  bin:
+    bwip-js: bin/bwip-js.js
+  checksum: 10c0/084424c9e1dae29bc6218cdd94739c0f51a8f403e2b94f3ef9b246ac5a5b465f3b747943b23331676a3e8b3764db8536c53c1afaff37773896ea4261e1290b50
+  languageName: node
+  linkType: hard
+
 "bytes@npm:^3.1.2, bytes@npm:~3.1.2":
   version: 3.1.2
   resolution: "bytes@npm:3.1.2"
@@ -6430,6 +6439,7 @@ __metadata:
     "@types/node": "npm:^22.10.7"
     "@types/supertest": "npm:^6.0.0"
     axios: "npm:^1.18.1"
+    bwip-js: "npm:^4.11.4"
     class-transformer: "npm:^0.5.1"
     class-validator: "npm:^0.14.1"
     jest: "npm:^30.2.0"

@@ -9,6 +9,7 @@ import { ResultSignaturesService } from './result-signatures.service';
 import { CreateResultDto } from '../dto/result.dto';
 import { computeResultTat } from './tat-calculator';
 import { TenantContext } from '../../../common/tenant-context';
+import { NotificationTriggersService } from './notification-triggers.service';
 
 @Injectable()
 export class ResultsService extends BaseLisService<ResultEntity> {
@@ -17,6 +18,7 @@ export class ResultsService extends BaseLisService<ResultEntity> {
     private readonly statuses: StatusesService,
     private readonly statusHistory: StatusHistoryService,
     private readonly signatures: ResultSignaturesService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {
     super(repo, 'results');
   }
@@ -86,6 +88,7 @@ export class ResultsService extends BaseLisService<ResultEntity> {
     const toStatus = await this.statuses.findOne(toStatusId);
     const fromCode = result.status;
     const toCode = toStatus.code;
+    const wasFinalized = fromCode === 'FINALIZED';
     if (!this.statuses.validateTransition('RESULT', fromCode, toCode)) {
       throw new BadRequestException(`Invalid transition from "${fromCode}" to "${toCode}"`);
     }
@@ -107,6 +110,34 @@ export class ResultsService extends BaseLisService<ResultEntity> {
     if (toCode === 'FINALIZED') result.validatedDate = new Date().toISOString().split('T')[0];
     await this.repo.save(result);
     await this.statusHistory.record('Result', id, toStatusId, result.statusId, userId ?? null, reason ?? null);
+
+    // Notification triggers through the conversations module (#109/#110).
+    // A result re-finalized after FINALIZED is an amendment (already released).
+    if (toCode === 'FINALIZED') {
+      const finalized = await this.findOne(id, tenant);
+      if (this.isCritical(finalized)) {
+        await this.notificationTriggers.criticalResult(finalized, tenant);
+      }
+      if (wasFinalized) {
+        await this.notificationTriggers.resultAmended(finalized, tenant);
+      } else {
+        await this.notificationTriggers.resultReady(finalized, tenant);
+      }
+    }
+
     return this.findOne(id, tenant);
+  }
+
+  /** Value outside the reference-range critical bands → doctor alert. */
+  private isCritical(finalized: any): boolean {
+    const range = finalized?.referenceRange;
+    if (!range) return false;
+    const value = Number(finalized.value);
+    if (!Number.isFinite(value)) return false;
+    const low = range.criticalLow != null ? Number(range.criticalLow) : null;
+    const high = range.criticalHigh != null ? Number(range.criticalHigh) : null;
+    if (low != null && value <= low) return true;
+    if (high != null && value >= high) return true;
+    return false;
   }
 }

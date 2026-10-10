@@ -34,6 +34,7 @@ describe('LIS Integration (Postgres)', () => {
     let createdIds: Record<string, string> = {}
 
     beforeAll(async () => {
+        jest.setTimeout(180_000)
         process.env.DB_NAME = 'rxsoft_lis_test'
         process.env.DB_DROP_SCHEMA = 'true'
         process.env.DB_SYNCHRONIZE = 'true'

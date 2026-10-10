@@ -263,7 +263,7 @@ describe('ResultsService serialization', () => {
     const statuses = {} as any;
     const statusHistory = {} as any;
     const signatures = {} as any;
-    return new ResultsService(repo, statuses, statusHistory, signatures);
+    return new ResultsService(repo, statuses, statusHistory, signatures, {} as any);
   }
 
   it('attaches a tat summary to result rows', () => {

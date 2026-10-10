@@ -68,6 +68,13 @@ export class PatientsService extends BaseLisService<PatientEntity> {
     return this.findOne(id, tenant);
   }
 
+  async findByPatientId(patientId: string): Promise<PatientEntity | null> {
+    return this.repo.findOne({
+      where: { patientId, deletedAt: null } as any,
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async replace(id: string, payload: CreatePatientDto, tenant?: TenantContext): Promise<any> {
     const item = await this.findOne(id, tenant);
     const saved = await this.repo.save({

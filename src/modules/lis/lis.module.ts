@@ -42,6 +42,8 @@ import {
   TestDefinitionEntity,
   TestSectionEntity,
   UnitOfMeasurementEntity,
+  NotificationTemplateEntity,
+  NotificationDispatchEntity,
 } from './entities';
 import { CodeGeneratorService } from './services/code-generator.service';
 import { BarcodeService } from './services/barcode.service';
@@ -125,6 +127,12 @@ import { EqaEnrollmentsController } from './controllers/eqa-enrollments.controll
 import { EqaResultsController } from './controllers/eqa-results.controller';
 import { QaChecklistItemsController } from './controllers/qa-checklist-items.controller';
 import { TatController } from './controllers/tat.controller';
+import { NotificationsController } from './controllers/notifications.controller';
+import { NotificationTriggersController } from './controllers/notifications-admin.controller';
+import { NotificationService } from './services/notification.service';
+import { NotificationTriggersService } from './services/notification-triggers.service';
+import { ConversationDispatchService } from './services/notification-dispatch.service';
+import { LabAlertScheduler } from './services/lab-alert.scheduler';
 
 @Module({
   imports: [
@@ -170,6 +178,8 @@ import { TatController } from './controllers/tat.controller';
       EqaProgramEntity,
       EqaEnrollmentEntity,
       EqaResultEntity,
+      NotificationTemplateEntity,
+      NotificationDispatchEntity,
     ]),
   ],
   controllers: [
@@ -211,6 +221,8 @@ import { TatController } from './controllers/tat.controller';
     SourceOfSamplesController,
     QaChecklistItemsController,
     TatController,
+    NotificationsController,
+    NotificationTriggersController,
   ],
   providers: [
     CodeGeneratorService,
@@ -257,6 +269,10 @@ import { TatController } from './controllers/tat.controller';
     QaChecklistItemsService,
     QaHoldsService,
     TatService,
+    NotificationService,
+    NotificationTriggersService,
+    ConversationDispatchService,
+    LabAlertScheduler,
   ],
   exports: [
     CodeGeneratorService,
@@ -291,6 +307,7 @@ import { TatController } from './controllers/tat.controller';
     EqaProgramsService,
     EqaEnrollmentsService,
     EqaResultsService,
+    NotificationService,
   ],
 })
 export class LisModule {}

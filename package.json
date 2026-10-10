@@ -24,6 +24,7 @@
     "@nestjs/testing": "^11.1.19",
     "@nestjs/typeorm": "^11.0.0",
     "axios": "^1.18.1",
+    "bwip-js": "^4.11.4",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "pg": "^8.13.1",

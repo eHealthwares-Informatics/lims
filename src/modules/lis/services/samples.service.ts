@@ -5,13 +5,17 @@ import { SampleEntity } from '../entities';
 import { BaseLisService } from './base-lis.service';
 import { CreateSampleDto } from '../dto/sample.dto';
 import { StatusesService } from './statuses.service';
+import { StatusHistoryService } from './status-history.service';
 import { TenantContext } from '../../../common/tenant-context';
+import { NotificationTriggersService } from './notification-triggers.service';
 
 @Injectable()
 export class SamplesService extends BaseLisService<SampleEntity> {
   constructor(
     @InjectRepository(SampleEntity) repo: Repository<SampleEntity>,
     private readonly statuses: StatusesService,
+    private readonly statusHistory: StatusHistoryService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {
     super(repo, 'samples');
   }
@@ -50,6 +54,45 @@ export class SamplesService extends BaseLisService<SampleEntity> {
       }),
     );
     return this.findOne(item.id);
+  }
+
+  /**
+   * Marks a sample received at the lab (COLLECTED → RECEIVED), stamps
+   * the receive date, and triggers the patient "sample received"
+   * notification through the conversations module (#109).
+   */
+  async receiveSample(id: string, tenant?: TenantContext, userId?: string): Promise<any> {
+    const sample = (await this.findOne(id, tenant)) as SampleEntity;
+    const receivedStatus = await this.statuses.findByCode('RECEIVED');
+    if (!receivedStatus) {
+      throw new BadRequestException('Sample status "RECEIVED" not found');
+    }
+    if (sample.statusId === receivedStatus.id) {
+      throw new BadRequestException('Sample is already received');
+    }
+    const fromCode = sample.status?.code ?? 'COLLECTED';
+    if (!this.statuses.validateTransition('SAMPLE', fromCode, 'RECEIVED')) {
+      throw new BadRequestException(`Invalid transition from "${fromCode}" to "RECEIVED"`);
+    }
+
+    const fromStatusId = sample.statusId;
+    sample.statusId = receivedStatus.id;
+    sample.receivedDate = new Date();
+    await this.repo.save(sample);
+
+    await this.statusHistory.record(
+      'Sample',
+      id,
+      receivedStatus.id,
+      fromStatusId,
+      userId ?? tenant?.userId ?? null,
+      'Sample received at laboratory',
+      tenant,
+    );
+
+    const refreshed = (await this.findOne(id, tenant)) as SampleEntity;
+    await this.notificationTriggers.sampleReceived(refreshed, tenant);
+    return refreshed;
   }
 
   async findByOrder(orderId: string, tenant?: TenantContext): Promise<SampleEntity[]> {

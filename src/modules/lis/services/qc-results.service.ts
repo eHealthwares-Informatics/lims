@@ -7,6 +7,7 @@ import { TenantContext } from '../../../common/tenant-context';
 import { CreateQcResultDto } from '../dto/qc-result.dto';
 import { WestgardService } from './westgard.service';
 import { QcAlertsService } from './qc-alerts.service';
+import { NotificationTriggersService } from './notification-triggers.service';
 
 @Injectable()
 export class QcResultsService extends BaseLisService<QcResultEntity> {
@@ -15,6 +16,7 @@ export class QcResultsService extends BaseLisService<QcResultEntity> {
     @InjectRepository(QcLotEntity) private readonly qcLotRepo: Repository<QcLotEntity>,
     private readonly westgard: WestgardService,
     private readonly alerts: QcAlertsService,
+    private readonly notificationTriggers: NotificationTriggersService,
   ) {
     super(repo, 'qc_results');
   }
@@ -76,12 +78,14 @@ export class QcResultsService extends BaseLisService<QcResultEntity> {
       await this.repo.update(item.id, { inControl: false });
 
       for (const violation of violations) {
-        await this.alerts.createFromViolation({
+        const alert = await this.alerts.createFromViolation({
           qcResultId: item.id,
           rule: violation.rule,
           severity: violation.severity,
           description: violation.description,
         });
+        // QC failed → lab alert through the conversations module (#111).
+        await this.notificationTriggers.qcFailed(alert, item, tenant);
       }
     }
 
