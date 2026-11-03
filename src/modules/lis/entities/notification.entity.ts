@@ -85,6 +85,10 @@ export class NotificationDispatchEntity extends LisBaseEntity {
   @Column({ type: 'text', nullable: true })
   channelCode!: string | null;
 
+  /** Primary channel when this row is a fallback attempt. */
+  @Column({ name: 'fallback_from', type: 'text', nullable: true })
+  fallbackFrom!: string | null;
+
   @Column({ type: 'text', nullable: true })
   templateCodeUsed!: string | null;
 

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderEntity, ResultEntity, ReferenceRangeEntity } from '../entities';
+import { PrintsService } from '../../prints/prints.service';
 
 export interface ReportRow {
   name: string;
@@ -53,6 +54,7 @@ export class ReportPdfService {
     @InjectRepository(OrderEntity) private readonly orderRepo: Repository<OrderEntity>,
     @InjectRepository(ResultEntity) private readonly resultRepo: Repository<ResultEntity>,
     @InjectRepository(ReferenceRangeEntity) private readonly rangeRepo: Repository<ReferenceRangeEntity>,
+    private readonly prints: PrintsService,
   ) {}
 
   async buildReportData(orderId: string): Promise<ReportData> {
@@ -391,37 +393,56 @@ export class ReportPdfService {
   }
 
   async generatePdf(orderId: string): Promise<{ buffer: Buffer; filename: string }> {
-    const data = await this.buildReportData(orderId);
-    const html = this.renderHtml(data);
-    const chromePath =
+    const order = await this.orderRepo.findOne({
+      where: { id: orderId },
+      select: { id: true, organizationId: true },
+    });
+    const organizationId =
+      order?.organizationId ?? '00000000-0000-0000-0000-000000000000';
+    const cached = await this.prints.getOrGenerate(
+      {
+        organizationId,
+        resourceType: 'lis_order_report',
+        resourceId: orderId,
+        printTemplateId: 'labresult',
+        format: 'pdf',
+        fileName: `report-${orderId}.pdf`,
+      },
+      async () => {
+        const data = await this.buildReportData(orderId);
+        const html = this.renderHtml(data);
+        const chromePath =
       process.env.CHROME_PATH ??
       (await this.findChrome()) ??
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-    let puppeteer: any;
-    try {
-      puppeteer = require('puppeteer-core');
-    } catch {
-      throw new Error('puppeteer-core is not installed');
-    }
+        let puppeteer: any;
+        try {
+          puppeteer = require('puppeteer-core');
+        } catch {
+          throw new Error('puppeteer-core is not installed');
+        }
 
-    const browser = await puppeteer.launch({
-      executablePath: chromePath,
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-    try {
-      const page = await browser.newPage();
-      await page.setContent(html, { waitUntil: 'networkidle0' });
-      const buffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '12mm', bottom: '14mm', left: '12mm', right: '12mm' },
-      });
-      return { buffer, filename: `${data.report.requisitionNumber}.pdf` };
-    } finally {
-      await browser.close();
-    }
+        const browser = await puppeteer.launch({
+          executablePath: chromePath,
+          headless: true,
+          args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        });
+        try {
+          const page = await browser.newPage();
+          await page.setContent(html, { waitUntil: 'networkidle0' });
+          const buffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '12mm', bottom: '14mm', left: '12mm', right: '12mm' },
+          });
+          return { buffer, fileName: `${data.report.requisitionNumber}.pdf` };
+        } finally {
+          await browser.close();
+        }
+      },
+    );
+    return { buffer: cached.buffer, filename: cached.fileName };
   }
 
   private async findChrome(): Promise<string | null> {
