@@ -7,6 +7,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm/dist/interfaces/typeorm-op
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { HealthController } from './modules/health/controllers/health.controller';
 import { LisModule } from './modules/lis/lis.module';
+import { PrintsModule } from './modules/prints/prints.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { LisModule } from './modules/lis/lis.module';
         } as TypeOrmModuleOptions;
       },
     }),
+    PrintsModule,
     LisModule,
   ],
   controllers: [HealthController],

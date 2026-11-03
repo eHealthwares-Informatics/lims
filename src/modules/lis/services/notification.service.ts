@@ -11,6 +11,14 @@ import {
 } from '../entities';
 import { TenantContext } from '../../../common/tenant-context';
 import { ConversationDispatchService } from './notification-dispatch.service';
+import {
+  isChannelEnabled,
+  isEventChannelEnabled,
+  NotificationPolicyClient,
+  resolveFallbackChannel,
+  type NotificationPolicyChannel,
+  type NotificationPolicyEvent,
+} from './notification-policy.client';
 
 /** Both the trigger event keys and the seeding payload keys. */
 export type NotificationEventKey =
@@ -53,6 +61,7 @@ export class NotificationService {
     private readonly dispatchRepo: Repository<NotificationDispatchEntity>,
     private readonly conversationDispatch: ConversationDispatchService,
     private readonly config: ConfigService,
+    private readonly policyClient: NotificationPolicyClient,
   ) {}
 
   /** Idempotency marker so a trigger can't double-fire for the same entity. */
@@ -144,14 +153,25 @@ export class NotificationService {
         ? template.channels.split(',').map((c) => c.trim()).filter(Boolean)
         : ['SMS'];
 
+    const policy = await this.policyClient.get(tenant?.organizationId);
+    const policyEvent: NotificationPolicyEvent | null =
+      trigger.eventKey === 'RESULT_READY' || trigger.eventKey === 'RESULT_AMENDED'
+        ? 'final_result'
+        : null;
+
     const channelTypes: NotificationChannel[] = [];
     for (const raw of channelsRaw) {
       const type = raw.toUpperCase() as NotificationChannel;
       if (channelTypes.includes(type)) continue;
-      if (type === 'SMS' && trigger.recipient?.phone) channelTypes.push(type);
-      else if (type === 'WHATSAPP' && trigger.recipient?.phone) channelTypes.push(type);
-      else if (type === 'EMAIL' && trigger.recipient?.email) channelTypes.push(type);
-        }
+      if (type === 'SMS' && !trigger.recipient?.phone) continue;
+      if (type === 'WHATSAPP' && !trigger.recipient?.phone) continue;
+      if (type === 'EMAIL' && !trigger.recipient?.email) continue;
+
+      const channelKey = type.toLowerCase() as NotificationPolicyChannel;
+      if (!isChannelEnabled(policy, channelKey)) continue;
+      if (policyEvent && !isEventChannelEnabled(policy, policyEvent, channelKey)) continue;
+      channelTypes.push(type);
+    }
 
     if (!channelTypes.length) {
       this.logger.warn(
@@ -161,46 +181,90 @@ export class NotificationService {
     }
 
     for (const channelType of channelTypes) {
-      const ledger = await this.dispatchRepo.save(
-        this.dispatchRepo.create({
-          eventKey: trigger.eventKey,
-          audience: trigger.audience ?? 'PATIENT',
-          recipientAddress: channelType === 'EMAIL' ? trigger.recipient?.email : trigger.recipient?.phone,
-          relatedEntityType: trigger.relatedEntityType ?? null,
-          relatedEntityId: trigger.relatedEntityId ?? null,
-          status: 'PENDING',
-          channelCode: template?.channelCodeOverride ?? null,
-          templateCodeUsed: template?.templateCode ?? null,
-          renderedBody: trigger.body,
-        }),
-      );
-
-      const result = await this.conversationDispatch.send({
+      const channelKey = channelType.toLowerCase() as NotificationPolicyChannel;
+      const primaryCode =
+        template?.channelCodeOverride ?? policy?.channels[channelKey]?.code ?? null;
+      const primary = await this.sendChannel({
+        trigger,
+        template,
         channelType,
-        channelCodeOverride: template?.channelCodeOverride ?? null,
-        phone: trigger.recipient?.phone ?? null,
-        email: trigger.recipient?.email ?? null,
-        title: trigger.title,
-        message: trigger.body,
-        contextId: `${ledger.id}`,
-        sourceApp: 'lis',
-        eventType: trigger.eventKey,
-        relatedEntityType: trigger.relatedEntityType,
-        relatedEntityId: trigger.relatedEntityId,
+        channelCode: primaryCode,
       });
+      if (primary.ok) continue;
 
-      await this.dispatchRepo.update(
-        { id: ledger.id },
-        {
-          status: result.ok ? 'SENT' : 'FAILED',
-          exchangeId: result.exchangeId ?? null,
-          contextId: `${ledger.id}`,
-          failureReason: result.error ?? null,
-          sentAt: result.ok ? new Date() : null,
-          attempts: (ledger.attempts ?? 0) + 1,
-        },
-      );
+      const fallback = resolveFallbackChannel(policy, channelKey);
+      if (!fallback) continue;
+      if (!isChannelEnabled(policy, fallback)) continue;
+      if (policyEvent && !isEventChannelEnabled(policy, policyEvent, fallback)) continue;
+
+      const fallbackType = fallback.toUpperCase() as NotificationChannel;
+      const fallbackRecipient =
+        fallbackType === 'EMAIL' ? trigger.recipient?.email : trigger.recipient?.phone;
+      if (!fallbackRecipient) continue;
+
+      await this.sendChannel({
+        trigger,
+        template,
+        channelType: fallbackType,
+        channelCode: policy?.channels[fallback]?.code ?? null,
+        fallbackFrom: channelType,
+      });
     }
+  }
+
+  /** One channel attempt + its ledger row. */
+  private async sendChannel(params: {
+    trigger: NotificationTriggerContext;
+    template: NotificationTemplateEntity | null;
+    channelType: NotificationChannel;
+    channelCode: string | null;
+    fallbackFrom?: NotificationChannel;
+  }): Promise<{ ok: boolean }> {
+    const { trigger, template, channelType, channelCode, fallbackFrom } = params;
+
+    const ledger = await this.dispatchRepo.save(
+      this.dispatchRepo.create({
+        eventKey: trigger.eventKey,
+        audience: trigger.audience ?? 'PATIENT',
+        recipientAddress:
+          channelType === 'EMAIL' ? trigger.recipient?.email : trigger.recipient?.phone,
+        relatedEntityType: trigger.relatedEntityType ?? null,
+        relatedEntityId: trigger.relatedEntityId ?? null,
+        status: 'PENDING',
+        channelCode,
+        fallbackFrom: fallbackFrom ?? null,
+        templateCodeUsed: template?.templateCode ?? null,
+        renderedBody: trigger.body,
+      }),
+    );
+
+    const result = await this.conversationDispatch.send({
+      channelType,
+      channelCodeOverride: channelCode,
+      phone: trigger.recipient?.phone ?? null,
+      email: trigger.recipient?.email ?? null,
+      title: trigger.title,
+      message: trigger.body,
+      contextId: `${ledger.id}`,
+      sourceApp: 'lis',
+      eventType: trigger.eventKey,
+      relatedEntityType: trigger.relatedEntityType,
+      relatedEntityId: trigger.relatedEntityId,
+    });
+
+    await this.dispatchRepo.update(
+      { id: ledger.id },
+      {
+        status: result.ok ? 'SENT' : 'FAILED',
+        exchangeId: result.exchangeId ?? null,
+        contextId: `${ledger.id}`,
+        failureReason: result.error ?? null,
+        sentAt: result.ok ? new Date() : null,
+        attempts: (ledger.attempts ?? 0) + 1,
+      },
+    );
+
+    return { ok: result.ok };
   }
 
   /**
