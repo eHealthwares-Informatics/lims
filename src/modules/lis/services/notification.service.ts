@@ -2,11 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 import axios from 'axios';
 import { IsNull, Repository } from 'typeorm';
 import {
   NotificationDispatchEntity,
-  NotificationTemplateEntity,
   NotificationChannel,
 } from '../entities';
 import { TenantContext } from '../../../common/tenant-context';
@@ -55,83 +56,139 @@ export class NotificationService {
   private readonly logger = new Logger(NotificationService.name);
 
   constructor(
-    @InjectRepository(NotificationTemplateEntity)
-    private readonly templateRepo: Repository<NotificationTemplateEntity>,
     @InjectRepository(NotificationDispatchEntity)
     private readonly dispatchRepo: Repository<NotificationDispatchEntity>,
     private readonly conversationDispatch: ConversationDispatchService,
     private readonly config: ConfigService,
     private readonly policyClient: NotificationPolicyClient,
+    private readonly http: HttpService,
   ) {}
 
   /** Idempotency marker so a trigger can't double-fire for the same entity. */
   private static readonly DUPLICATE_WINDOW_HOURS = 24;
 
-  // ------------------------------------------------------------------ templates
+  private baseUrl(): string {
+    return (
+      this.config.get<string>('CONVERSATION_API_URL', 'http://localhost:8090/api') +
+      '/event-templates'
+    );
+  }
+
+  private apiKey(): string {
+    return this.config.get<string>('INTEROP_API_KEY', 'lims-interop-key-dev');
+  }
 
   /**
-   * Resolves an active template for an event, scoped
-   * org/location → default. Seeded defaults are returned when nothing in
-   * the database matches (module is functional with zero configuration).
+   * Resolves an active template for an event via the conversation engine.
+   * Falls back to null when no template is configured.
    */
   private async resolveTemplate(
     eventKey: string,
     platform: string | null,
     tenant?: TenantContext,
-  ): Promise<NotificationTemplateEntity | null> {
-    const load = async (templateCode: string) =>
-      this.templateRepo.findOne({
-        where: { templateCode, active: true, deletedAt: IsNull() } as any,
-      });
+  ): Promise<{ templateCode: string; body: string; channelCodeOverride: string | null; channels: string; active: boolean } | null> {
+    const lookupKey = platform ?? eventKey;
+    const scopeSuffix =
+      tenant?.locationId ?? tenant?.organizationId ?? 'default';
+    const scopedCode = `${lookupKey}@${scopeSuffix}`;
+    const defaultCode = `${lookupKey}@default`;
 
-    const scopedCode = tenant?.locationId
-      ? `${platform ?? eventKey}@${tenant.locationId}`
-      : tenant?.organizationId
-        ? `${platform ?? eventKey}@${tenant.organizationId}`
-        : null;
-    if (scopedCode) {
-      const scoped = await load(scopedCode);
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<{
+          data: Array<{
+            templateCode: string;
+            body: string;
+            channelCodeOverride: string | null;
+            channels: string;
+            active: boolean;
+          }>;
+        }>(this.baseUrl(), {
+          params: { eventKey: lookupKey },
+          headers: { 'x-api-key': this.apiKey() },
+        }),
+      );
+
+      const rows = data?.data ?? [];
+      // Prefer scoped match, then the seeded default.
+      const scoped = rows.find((r) => r.templateCode === scopedCode && r.active);
       if (scoped) return scoped;
+
+      const seeded = rows.find((r) => r.templateCode === defaultCode && r.active);
+      return seeded ?? null;
+    } catch (err) {
+      this.logger.warn(
+        `Conversation template lookup failed for ${lookupKey}: ${err}`,
+      );
+      return null;
     }
-
-    const seeded = await load(`${platform ?? eventKey}@default`);
-    if (seeded) return seeded;
-
-    return null;
   }
 
-  async listTemplates(tenant?: TenantContext, eventKey?: string): Promise<NotificationTemplateEntity[]> {
-    const qb = this.templateRepo
-      .createQueryBuilder('t')
-      .where('t.deleted_at IS NULL');
-    if (eventKey) qb.andWhere('t.event_key = :eventKey', { eventKey });
-    if (tenant && !tenant.isGlobalAdmin) {
-      qb.andWhere('(t.organization_id = :orgId OR t.organization_id IS NULL)', {
-        orgId: tenant.organizationId,
-      });
-      if (tenant.locationId) {
-        qb.andWhere('(t.location_id = :locId OR t.location_id IS NULL)', {
-          locId: tenant.locationId,
-        });
+  async listTemplates(tenant?: TenantContext, eventKey?: string): Promise<Array<{ templateCode: string; eventKey: string; audience: string; channels: string; body: string; language: string; channelCodeOverride: string | null; active: boolean; organizationId: string | null; locationId: string | null }>> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.get<{ data: Array<{ templateCode: string; eventKey: string; audience: string; channels: string; body: string; language: string; channelCodeOverride: string | null; active: boolean; organizationId: string | null; locationId: string | null }> }>(
+          this.baseUrl(),
+          {
+            params: eventKey ? { eventKey } : {},
+            headers: { 'x-api-key': this.apiKey() },
+          },
+        ),
+      );
+
+      const rows = data?.data ?? [];
+      if (tenant && !tenant.isGlobalAdmin) {
+        return rows.filter(
+          (r) =>
+            r.organizationId === tenant.organizationId ||
+            r.organizationId === null,
+        );
       }
+      return rows;
+    } catch (err) {
+      this.logger.warn(`Conversation template list failed: ${err}`);
+      return [];
     }
-    return qb.orderBy('t.template_code', 'ASC').getMany();
   }
 
-  upsertTemplate(payload: Partial<NotificationTemplateEntity> & { templateCode: string; eventKey: string; audience: string; body: string }): Promise<NotificationTemplateEntity> {
-    const entity = this.templateRepo.create({
-      templateCode: payload.templateCode,
-      eventKey: payload.eventKey,
-      audience: payload.audience as any ?? 'PATIENT',
-      channels: payload.channels ?? 'SMS',
-      body: payload.body,
-      language: payload.language ?? 'en',
-      channelCodeOverride: payload.channelCodeOverride ?? null,
-      active: payload.active ?? true,
-      organizationId: payload.organizationId ?? null,
-      locationId: payload.locationId ?? null,
-    });
-    return this.templateRepo.save(entity);
+  async upsertTemplate(payload: {
+    templateCode: string;
+    eventKey: string;
+    audience: string;
+    channels?: string;
+    body: string;
+    language?: string;
+    channelCodeOverride?: string;
+    active?: boolean;
+    organizationId?: string | null;
+    locationId?: string | null;
+  }): Promise<{ templateCode: string; body: string; eventKey: string; audience: string; channels: string; language: string; channelCodeOverride: string | null; active: boolean; organizationId: string | null; locationId: string | null }> {
+    try {
+      const { data } = await firstValueFrom(
+        this.http.post(
+          this.baseUrl(),
+          {
+            templateCode: payload.templateCode,
+            eventKey: payload.eventKey,
+            audience: payload.audience ?? 'PATIENT',
+            channels: payload.channels ?? 'SMS',
+            body: payload.body,
+            language: payload.language ?? 'en',
+            channelCodeOverride: payload.channelCodeOverride ?? null,
+            active: payload.active ?? true,
+            organizationId: payload.organizationId ?? null,
+            locationId: payload.locationId ?? null,
+          },
+          { headers: { 'x-api-key': this.apiKey() } },
+        ),
+      );
+      return data;
+    } catch (err) {
+      this.logger.warn(
+        `Conversation template upsert failed for ${payload.templateCode}: ${err}`,
+      );
+      throw err;
+    }
   }
 
   // ------------------------------------------------------------------ dispatch
@@ -144,7 +201,7 @@ export class NotificationService {
   private async dispatch(
     trigger: NotificationTriggerContext,
     platform: string | null,
-    template: NotificationTemplateEntity | null,
+    template: { channels: string; templateCode: string; channelCodeOverride?: string | null } | null,
     tenant?: TenantContext,
   ): Promise<void> {
     const channelsRaw = trigger.channels?.length
@@ -215,7 +272,7 @@ export class NotificationService {
   /** One channel attempt + its ledger row. */
   private async sendChannel(params: {
     trigger: NotificationTriggerContext;
-    template: NotificationTemplateEntity | null;
+    template: { templateCode: string } | null;
     channelType: NotificationChannel;
     channelCode: string | null;
     fallbackFrom?: NotificationChannel;
