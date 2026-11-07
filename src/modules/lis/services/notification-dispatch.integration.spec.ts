@@ -1,7 +1,7 @@
 import axios from "axios";
 import { ConversationDispatchService } from "./notification-dispatch.service";
 
-describe("ConversationDispatchService (notification-dispatch payload)", () => {
+describe("ConversationDispatchService (notification event)", () => {
   const config = {
     get: jest.fn((key: string, defaultValue?: string) => {
       if (key === "CONVERSATION_API_URL") return "http://conversation.test/api";
@@ -24,7 +24,7 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
     jest.restoreAllMocks();
   });
 
-  it("posts an SMS payload to /notification-dispatch/payload", async () => {
+  it("posts an event + context to /notification-dispatch/event", async () => {
     const result = await service.send({
       organizationId: "org-1",
       channelType: "SMS",
@@ -46,7 +46,7 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
     expect(post).toHaveBeenCalledTimes(1);
     const [url, body, options] = post.mock.calls[0];
     expect(url).toBe(
-      "http://conversation.test/api/notification-dispatch/payload",
+      "http://conversation.test/api/notification-dispatch/event",
     );
     expect(options.headers).toMatchObject({
       "Content-Type": "application/json",
@@ -54,21 +54,23 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
     });
     expect(body).toMatchObject({
       organizationId: "org-1",
-      eventKey: "SAMPLE_RECEIVED",
-      channels: ["sms"],
-      recipients: { phone: "+2348000000001" },
-      subject: "Sample received",
-      message: "Your sample was received",
+      eventKey: "sample_received",
+      context: {
+        source: "lis-notification",
+        sourceApp: "lis",
+        eventType: "SAMPLE_RECEIVED",
+        contextId: "ledger-1",
+        title: "Sample received",
+        message: "Your sample was received",
+        recipients: { phone: "+2348000000001" },
+      },
     });
-    expect(body.context).toMatchObject({
-      source: "lis-notification",
-      sourceApp: "lis",
-      eventType: "SAMPLE_RECEIVED",
-      contextId: "ledger-1",
-    });
+    // No sender-side channel selection or rendered subject/message top-level.
+    expect(body.channels).toBeUndefined();
+    expect(body.message).toBeUndefined();
   });
 
-  it("maps EMAIL to the email channel and recipient", async () => {
+  it("maps result events onto final_result", async () => {
     await service.send({
       channelType: "EMAIL",
       email: "patient@example.com",
@@ -79,23 +81,39 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
       eventType: "RESULT_READY",
     });
 
-    const body = post.mock.calls[0][1];
-    expect(body.channels).toEqual(["email"]);
-    expect(body.recipients).toEqual({ email: "patient@example.com" });
+    expect(post.mock.calls[0][1].eventKey).toBe("final_result");
   });
 
-  it("maps WHATSAPP to the whatsapp channel", async () => {
+  it("maps result amendments onto final_result", async () => {
     await service.send({
-      channelType: "WHATSAPP",
+      channelType: "SMS",
       phone: "+2348000000001",
-      title: "T",
-      message: "M",
+      title: "Result amended",
+      message: "Your result was amended",
       contextId: "ledger-3",
       sourceApp: "lis",
-      eventType: "RESULT_READY",
+      eventType: "RESULT_AMENDED",
     });
 
-    expect(post.mock.calls[0][1].channels).toEqual(["whatsapp"]);
+    expect(post.mock.calls[0][1].eventKey).toBe("final_result");
+  });
+
+  it("passes both recipient channels in context", async () => {
+    await service.send({
+      channelType: "SMS",
+      phone: "+2348000000001",
+      email: "patient@example.com",
+      title: "T",
+      message: "M",
+      contextId: "ledger-4",
+      sourceApp: "lis",
+      eventType: "CRITICAL_RESULT",
+    });
+
+    expect(post.mock.calls[0][1].context.recipients).toEqual({
+      phone: "+2348000000001",
+      email: "patient@example.com",
+    });
   });
 
   it("returns not-ok when the recipient is missing", async () => {
@@ -103,7 +121,7 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
       channelType: "EMAIL",
       title: "T",
       message: "M",
-      contextId: "ledger-4",
+      contextId: "ledger-5",
       sourceApp: "lis",
       eventType: "RESULT_READY",
     });
@@ -120,7 +138,7 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
       phone: "+2348000000001",
       title: "T",
       message: "M",
-      contextId: "ledger-5",
+      contextId: "ledger-6",
       sourceApp: "lis",
       eventType: "RESULT_READY",
     });
@@ -137,7 +155,7 @@ describe("ConversationDispatchService (notification-dispatch payload)", () => {
       phone: "+2348000000001",
       title: "T",
       message: "M",
-      contextId: "ledger-6",
+      contextId: "ledger-7",
       sourceApp: "lis",
       eventType: "RESULT_READY",
     });
