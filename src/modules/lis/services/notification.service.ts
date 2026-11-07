@@ -1,17 +1,14 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Cron } from '@nestjs/schedule';
-import { InjectRepository } from '@nestjs/typeorm';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
-import axios from 'axios';
-import { IsNull, Repository } from 'typeorm';
-import {
-  NotificationDispatchEntity,
-  NotificationChannel,
-} from '../entities';
-import { TenantContext } from '../../../common/tenant-context';
-import { ConversationDispatchService } from './notification-dispatch.service';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Cron } from "@nestjs/schedule";
+import { InjectRepository } from "@nestjs/typeorm";
+import { HttpService } from "@nestjs/axios";
+import { firstValueFrom } from "rxjs";
+import axios from "axios";
+import { IsNull, Repository } from "typeorm";
+import { NotificationDispatchEntity, NotificationChannel } from "../entities";
+import { TenantContext } from "../../../common/tenant-context";
+import { ConversationDispatchService } from "./notification-dispatch.service";
 import {
   isChannelEnabled,
   isEventChannelEnabled,
@@ -19,17 +16,17 @@ import {
   resolveFallbackChannel,
   type NotificationPolicyChannel,
   type NotificationPolicyEvent,
-} from './notification-policy.client';
+} from "./notification-policy.client";
 
 /** Both the trigger event keys and the seeding payload keys. */
 export type NotificationEventKey =
-  | 'SAMPLE_RECEIVED'
-  | 'RESULT_READY'
-  | 'RESULT_AMENDED'
-  | 'CRITICAL_RESULT'
-  | 'PAYMENT_REMINDER'
-  | 'ORDER_TAT_BREACH'
-  | 'QC_FAILED';
+  | "SAMPLE_RECEIVED"
+  | "RESULT_READY"
+  | "RESULT_AMENDED"
+  | "CRITICAL_RESULT"
+  | "PAYMENT_REMINDER"
+  | "ORDER_TAT_BREACH"
+  | "QC_FAILED";
 
 export interface NotificationTriggerContext {
   eventKey: NotificationEventKey;
@@ -48,7 +45,7 @@ export interface NotificationTriggerContext {
   variables: Record<string, string>;
   relatedEntityType?: string | null;
   relatedEntityId?: string | null;
-  audience?: 'PATIENT' | 'DOCTOR' | 'LAB';
+  audience?: "PATIENT" | "DOCTOR" | "LAB";
 }
 
 @Injectable()
@@ -69,13 +66,15 @@ export class NotificationService {
 
   private baseUrl(): string {
     return (
-      this.config.get<string>('CONVERSATION_API_URL', 'http://localhost:8090/api') +
-      '/event-templates'
+      this.config.get<string>(
+        "CONVERSATION_API_URL",
+        "http://localhost:8090/api",
+      ) + "/event-templates"
     );
   }
 
   private apiKey(): string {
-    return this.config.get<string>('INTEROP_API_KEY', 'lims-interop-key-dev');
+    return this.config.get<string>("INTEROP_API_KEY", "lims-interop-key-dev");
   }
 
   /**
@@ -86,10 +85,16 @@ export class NotificationService {
     eventKey: string,
     platform: string | null,
     tenant?: TenantContext,
-  ): Promise<{ templateCode: string; body: string; channelCodeOverride: string | null; channels: string; active: boolean } | null> {
+  ): Promise<{
+    templateCode: string;
+    body: string;
+    channelCodeOverride: string | null;
+    channels: string;
+    active: boolean;
+  } | null> {
     const lookupKey = platform ?? eventKey;
     const scopeSuffix =
-      tenant?.locationId ?? tenant?.organizationId ?? 'default';
+      tenant?.locationId ?? tenant?.organizationId ?? "default";
     const scopedCode = `${lookupKey}@${scopeSuffix}`;
     const defaultCode = `${lookupKey}@default`;
 
@@ -105,16 +110,20 @@ export class NotificationService {
           }>;
         }>(this.baseUrl(), {
           params: { eventKey: lookupKey },
-          headers: { 'x-api-key': this.apiKey() },
+          headers: { "x-api-key": this.apiKey() },
         }),
       );
 
       const rows = data?.data ?? [];
       // Prefer scoped match, then the seeded default.
-      const scoped = rows.find((r) => r.templateCode === scopedCode && r.active);
+      const scoped = rows.find(
+        (r) => r.templateCode === scopedCode && r.active,
+      );
       if (scoped) return scoped;
 
-      const seeded = rows.find((r) => r.templateCode === defaultCode && r.active);
+      const seeded = rows.find(
+        (r) => r.templateCode === defaultCode && r.active,
+      );
       return seeded ?? null;
     } catch (err) {
       this.logger.warn(
@@ -124,16 +133,42 @@ export class NotificationService {
     }
   }
 
-  async listTemplates(tenant?: TenantContext, eventKey?: string): Promise<Array<{ templateCode: string; eventKey: string; audience: string; channels: string; body: string; language: string; channelCodeOverride: string | null; active: boolean; organizationId: string | null; locationId: string | null }>> {
+  async listTemplates(
+    tenant?: TenantContext,
+    eventKey?: string,
+  ): Promise<
+    Array<{
+      templateCode: string;
+      eventKey: string;
+      audience: string;
+      channels: string;
+      body: string;
+      language: string;
+      channelCodeOverride: string | null;
+      active: boolean;
+      organizationId: string | null;
+      locationId: string | null;
+    }>
+  > {
     try {
       const { data } = await firstValueFrom(
-        this.http.get<{ data: Array<{ templateCode: string; eventKey: string; audience: string; channels: string; body: string; language: string; channelCodeOverride: string | null; active: boolean; organizationId: string | null; locationId: string | null }> }>(
-          this.baseUrl(),
-          {
-            params: eventKey ? { eventKey } : {},
-            headers: { 'x-api-key': this.apiKey() },
-          },
-        ),
+        this.http.get<{
+          data: Array<{
+            templateCode: string;
+            eventKey: string;
+            audience: string;
+            channels: string;
+            body: string;
+            language: string;
+            channelCodeOverride: string | null;
+            active: boolean;
+            organizationId: string | null;
+            locationId: string | null;
+          }>;
+        }>(this.baseUrl(), {
+          params: eventKey ? { eventKey } : {},
+          headers: { "x-api-key": this.apiKey() },
+        }),
       );
 
       const rows = data?.data ?? [];
@@ -162,7 +197,18 @@ export class NotificationService {
     active?: boolean;
     organizationId?: string | null;
     locationId?: string | null;
-  }): Promise<{ templateCode: string; body: string; eventKey: string; audience: string; channels: string; language: string; channelCodeOverride: string | null; active: boolean; organizationId: string | null; locationId: string | null }> {
+  }): Promise<{
+    templateCode: string;
+    body: string;
+    eventKey: string;
+    audience: string;
+    channels: string;
+    language: string;
+    channelCodeOverride: string | null;
+    active: boolean;
+    organizationId: string | null;
+    locationId: string | null;
+  }> {
     try {
       const { data } = await firstValueFrom(
         this.http.post(
@@ -170,16 +216,16 @@ export class NotificationService {
           {
             templateCode: payload.templateCode,
             eventKey: payload.eventKey,
-            audience: payload.audience ?? 'PATIENT',
-            channels: payload.channels ?? 'SMS',
+            audience: payload.audience ?? "PATIENT",
+            channels: payload.channels ?? "SMS",
             body: payload.body,
-            language: payload.language ?? 'en',
+            language: payload.language ?? "en",
             channelCodeOverride: payload.channelCodeOverride ?? null,
             active: payload.active ?? true,
             organizationId: payload.organizationId ?? null,
             locationId: payload.locationId ?? null,
           },
-          { headers: { 'x-api-key': this.apiKey() } },
+          { headers: { "x-api-key": this.apiKey() } },
         ),
       );
       return data;
@@ -201,38 +247,50 @@ export class NotificationService {
   private async dispatch(
     trigger: NotificationTriggerContext,
     platform: string | null,
-    template: { channels: string; templateCode: string; channelCodeOverride?: string | null } | null,
+    template: {
+      channels: string;
+      templateCode: string;
+      channelCodeOverride?: string | null;
+    } | null,
     tenant?: TenantContext,
   ): Promise<void> {
     const channelsRaw = trigger.channels?.length
       ? trigger.channels
       : template
-        ? template.channels.split(',').map((c) => c.trim()).filter(Boolean)
-        : ['SMS'];
+        ? template.channels
+            .split(",")
+            .map((c) => c.trim())
+            .filter(Boolean)
+        : ["SMS"];
 
     const policy = await this.policyClient.get(tenant?.organizationId);
     const policyEvent: NotificationPolicyEvent | null =
-      trigger.eventKey === 'RESULT_READY' || trigger.eventKey === 'RESULT_AMENDED'
-        ? 'final_result'
+      trigger.eventKey === "RESULT_READY" ||
+      trigger.eventKey === "RESULT_AMENDED"
+        ? "final_result"
         : null;
 
     const channelTypes: NotificationChannel[] = [];
     for (const raw of channelsRaw) {
       const type = raw.toUpperCase() as NotificationChannel;
       if (channelTypes.includes(type)) continue;
-      if (type === 'SMS' && !trigger.recipient?.phone) continue;
-      if (type === 'WHATSAPP' && !trigger.recipient?.phone) continue;
-      if (type === 'EMAIL' && !trigger.recipient?.email) continue;
+      if (type === "SMS" && !trigger.recipient?.phone) continue;
+      if (type === "WHATSAPP" && !trigger.recipient?.phone) continue;
+      if (type === "EMAIL" && !trigger.recipient?.email) continue;
 
       const channelKey = type.toLowerCase() as NotificationPolicyChannel;
       if (!isChannelEnabled(policy, channelKey)) continue;
-      if (policyEvent && !isEventChannelEnabled(policy, policyEvent, channelKey)) continue;
+      if (
+        policyEvent &&
+        !isEventChannelEnabled(policy, policyEvent, channelKey)
+      )
+        continue;
       channelTypes.push(type);
     }
 
     if (!channelTypes.length) {
       this.logger.warn(
-        `[notify:${trigger.eventKey}] no resolvable channel for recipient (phone=${trigger.recipient?.phone ?? 'n/a'} email=${trigger.recipient?.email ?? 'n/a'})`,
+        `[notify:${trigger.eventKey}] no resolvable channel for recipient (phone=${trigger.recipient?.phone ?? "n/a"} email=${trigger.recipient?.email ?? "n/a"})`,
       );
       return;
     }
@@ -240,23 +298,29 @@ export class NotificationService {
     for (const channelType of channelTypes) {
       const channelKey = channelType.toLowerCase() as NotificationPolicyChannel;
       const primaryCode =
-        template?.channelCodeOverride ?? policy?.channels[channelKey]?.code ?? null;
+        template?.channelCodeOverride ??
+        policy?.channels[channelKey]?.code ??
+        null;
       const primary = await this.sendChannel({
         trigger,
         template,
         channelType,
         channelCode: primaryCode,
+        organizationId: tenant?.organizationId ?? null,
       });
       if (primary.ok) continue;
 
       const fallback = resolveFallbackChannel(policy, channelKey);
       if (!fallback) continue;
       if (!isChannelEnabled(policy, fallback)) continue;
-      if (policyEvent && !isEventChannelEnabled(policy, policyEvent, fallback)) continue;
+      if (policyEvent && !isEventChannelEnabled(policy, policyEvent, fallback))
+        continue;
 
       const fallbackType = fallback.toUpperCase() as NotificationChannel;
       const fallbackRecipient =
-        fallbackType === 'EMAIL' ? trigger.recipient?.email : trigger.recipient?.phone;
+        fallbackType === "EMAIL"
+          ? trigger.recipient?.email
+          : trigger.recipient?.phone;
       if (!fallbackRecipient) continue;
 
       await this.sendChannel({
@@ -265,6 +329,7 @@ export class NotificationService {
         channelType: fallbackType,
         channelCode: policy?.channels[fallback]?.code ?? null,
         fallbackFrom: channelType,
+        organizationId: tenant?.organizationId ?? null,
       });
     }
   }
@@ -276,18 +341,28 @@ export class NotificationService {
     channelType: NotificationChannel;
     channelCode: string | null;
     fallbackFrom?: NotificationChannel;
+    organizationId: string | null;
   }): Promise<{ ok: boolean }> {
-    const { trigger, template, channelType, channelCode, fallbackFrom } = params;
+    const {
+      trigger,
+      template,
+      channelType,
+      channelCode,
+      fallbackFrom,
+      organizationId,
+    } = params;
 
     const ledger = await this.dispatchRepo.save(
       this.dispatchRepo.create({
         eventKey: trigger.eventKey,
-        audience: trigger.audience ?? 'PATIENT',
+        audience: trigger.audience ?? "PATIENT",
         recipientAddress:
-          channelType === 'EMAIL' ? trigger.recipient?.email : trigger.recipient?.phone,
+          channelType === "EMAIL"
+            ? trigger.recipient?.email
+            : trigger.recipient?.phone,
         relatedEntityType: trigger.relatedEntityType ?? null,
         relatedEntityId: trigger.relatedEntityId ?? null,
-        status: 'PENDING',
+        status: "PENDING",
         channelCode,
         fallbackFrom: fallbackFrom ?? null,
         templateCodeUsed: template?.templateCode ?? null,
@@ -296,14 +371,14 @@ export class NotificationService {
     );
 
     const result = await this.conversationDispatch.send({
+      organizationId,
       channelType,
-      channelCodeOverride: channelCode,
       phone: trigger.recipient?.phone ?? null,
       email: trigger.recipient?.email ?? null,
       title: trigger.title,
       message: trigger.body,
       contextId: `${ledger.id}`,
-      sourceApp: 'lis',
+      sourceApp: "lis",
       eventType: trigger.eventKey,
       relatedEntityType: trigger.relatedEntityType,
       relatedEntityId: trigger.relatedEntityId,
@@ -312,7 +387,7 @@ export class NotificationService {
     await this.dispatchRepo.update(
       { id: ledger.id },
       {
-        status: result.ok ? 'SENT' : 'FAILED',
+        status: result.ok ? "SENT" : "FAILED",
         exchangeId: result.exchangeId ?? null,
         contextId: `${ledger.id}`,
         failureReason: result.error ?? null,
@@ -328,12 +403,22 @@ export class NotificationService {
    * Emit a notification event. Fires the matching template(s) for the
    * recipient (audience determines which template set applies).
    */
-  async emit(trigger: NotificationTriggerContext, tenant?: TenantContext, platform: string | null = null): Promise<void> {
+  async emit(
+    trigger: NotificationTriggerContext,
+    tenant?: TenantContext,
+    platform: string | null = null,
+  ): Promise<void> {
     try {
-      const template = await this.resolveTemplate(trigger.eventKey, platform, tenant);
+      const template = await this.resolveTemplate(
+        trigger.eventKey,
+        platform,
+        tenant,
+      );
       await this.dispatch(trigger, platform, template, tenant);
     } catch (error: any) {
-      this.logger.error(`[notify:${trigger.eventKey}] dispatch failed: ${error?.message ?? error}`);
+      this.logger.error(
+        `[notify:${trigger.eventKey}] dispatch failed: ${error?.message ?? error}`,
+      );
     }
   }
 
@@ -343,13 +428,19 @@ export class NotificationService {
    * Pulls outbound exchanges from the conversations module and mirrors the
    * delivery status onto the LIS dispatch ledger (sender-app copy).
    */
-  @Cron('*/15 * * * *')
+  @Cron("*/15 * * * *")
   async syncDeliveryStatus(): Promise<void> {
-    const baseUrl = this.config.get<string>('CONVERSATION_API_URL', 'http://localhost:8090/api');
-    const apiKey = this.config.get<string>('INTEROP_API_KEY', 'lis-interop-key-dev');
+    const baseUrl = this.config.get<string>(
+      "CONVERSATION_API_URL",
+      "http://localhost:8090/api",
+    );
+    const apiKey = this.config.get<string>(
+      "INTEROP_API_KEY",
+      "lis-interop-key-dev",
+    );
 
     const pending = await this.dispatchRepo.find({
-      where: { status: 'SENT', exchangeId: IsNull() },
+      where: { status: "SENT", exchangeId: IsNull() },
       take: 50,
     });
 
@@ -358,8 +449,8 @@ export class NotificationService {
         // Pull-API point: the sender app queries the conversation history by its own
         // context (sourceApp + contextId) rather than the engine messageId.
         const { data } = await axios.get(`${baseUrl}/exchanges/history`, {
-          headers: { 'x-api-key': apiKey },
-          params: { sourceApp: 'lis', contextId: ledger.contextId, limit: 5 },
+          headers: { "x-api-key": apiKey },
+          params: { sourceApp: "lis", contextId: ledger.contextId, limit: 5 },
           timeout: 10_000,
         });
         const exchange = data?.items?.[0] ?? data?.[0] ?? null;
@@ -368,12 +459,20 @@ export class NotificationService {
           { id: ledger.id },
           {
             exchangeId: exchange.id ?? ledger.exchangeId,
-            status: exchange.status === 'DELIVERED' ? ('SENT' as const) : ledger.status,
-            failureReason: exchange.status === 'FAILED' ? `Exchange ${exchange.id} failed` : ledger.failureReason,
+            status:
+              exchange.status === "DELIVERED"
+                ? ("SENT" as const)
+                : ledger.status,
+            failureReason:
+              exchange.status === "FAILED"
+                ? `Exchange ${exchange.id} failed`
+                : ledger.failureReason,
           },
         );
       } catch (error: any) {
-        this.logger.warn(`[notify:sync] exchange lookup failed contextId=${ledger.contextId}: ${error?.message}`);
+        this.logger.warn(
+          `[notify:sync] exchange lookup failed contextId=${ledger.contextId}: ${error?.message}`,
+        );
       }
     }
   }
@@ -381,20 +480,24 @@ export class NotificationService {
   /** Queue: retry failed dispatches up to 3 attempts. */
   async retryFailed(limit = 20): Promise<void> {
     const failed = await this.dispatchRepo.find({
-      where: [{ status: 'FAILED' as const }],
+      where: [{ status: "FAILED" as const }],
       take: limit,
     });
     for (const ledger of failed) {
       if ((ledger.attempts ?? 0) >= 3) continue;
       await this.dispatchRepo.update(
         { id: ledger.id },
-        { status: 'PENDING', failureReason: null },
+        { status: "PENDING", failureReason: null },
       );
     }
   }
 
   /** Idempotency: true when a dispatch already exists for this entity+event. */
-  async hasDispatch(eventKey: string, relatedEntityType: string, relatedEntityId: string): Promise<boolean> {
+  async hasDispatch(
+    eventKey: string,
+    relatedEntityType: string,
+    relatedEntityId: string,
+  ): Promise<boolean> {
     const count = await this.dispatchRepo.count({
       where: {
         eventKey,
@@ -407,30 +510,40 @@ export class NotificationService {
   }
 
   listDispatches(
-    query: { eventKey?: string; status?: string; relatedEntityId?: string; audience?: string },
+    query: {
+      eventKey?: string;
+      status?: string;
+      relatedEntityId?: string;
+      audience?: string;
+    },
     tenant?: TenantContext,
   ): Promise<{ data: NotificationDispatchEntity[]; total: number }> {
     const qb = this.dispatchRepo
-      .createQueryBuilder('d')
-      .where('d.deleted_at IS NULL');
-    if (query.eventKey) qb.andWhere('d.event_key = :eventKey', { eventKey: query.eventKey });
-    if (query.status) qb.andWhere('d.status = :status', { status: query.status });
-    if (query.audience) qb.andWhere('d.audience = :audience', { audience: query.audience });
+      .createQueryBuilder("d")
+      .where("d.deleted_at IS NULL");
+    if (query.eventKey)
+      qb.andWhere("d.event_key = :eventKey", { eventKey: query.eventKey });
+    if (query.status)
+      qb.andWhere("d.status = :status", { status: query.status });
+    if (query.audience)
+      qb.andWhere("d.audience = :audience", { audience: query.audience });
     if (query.relatedEntityId) {
-      qb.andWhere('d.related_entity_id = :relatedEntityId', { relatedEntityId: query.relatedEntityId });
+      qb.andWhere("d.related_entity_id = :relatedEntityId", {
+        relatedEntityId: query.relatedEntityId,
+      });
     }
     if (tenant && !tenant.isGlobalAdmin) {
-      qb.andWhere('(d.organization_id = :orgId OR d.organization_id IS NULL)', {
+      qb.andWhere("(d.organization_id = :orgId OR d.organization_id IS NULL)", {
         orgId: tenant.organizationId,
       });
       if (tenant.locationId) {
-        qb.andWhere('(d.location_id = :locId OR d.location_id IS NULL)', {
+        qb.andWhere("(d.location_id = :locId OR d.location_id IS NULL)", {
           locId: tenant.locationId,
         });
       }
     }
     return qb
-      .orderBy('d.created_at', 'DESC')
+      .orderBy("d.created_at", "DESC")
       .take(100)
       .getManyAndCount()
       .then(([data, total]) => ({ data, total }));
