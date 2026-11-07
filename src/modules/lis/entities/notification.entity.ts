@@ -6,47 +6,6 @@ export type NotificationStatus = 'PENDING' | 'SENT' | 'FAILED';
 export type NotificationAudience = 'PATIENT' | 'DOCTOR' | 'LAB';
 
 /**
- * Configurable message template per event, scoped to organization/location
- * and (optionally) a language variant. Falls back to the default (scope-less)
- * template with the same code when no scoped match exists.
- */
-@Entity('lis_notification_templates')
-export class NotificationTemplateEntity extends LisBaseEntity {
-  @Index({ unique: true })
-  @Column({ type: 'text' })
-  templateCode!: string;
-
-  /** Event key this template fires for, e.g. SAMPLE_RECEIVED, RESULT_FINALIZED. */
-  @Index()
-  @Column({ type: 'text' })
-  eventKey!: string;
-
-  @Column({ type: 'text' })
-  audience!: NotificationAudience;
-
-  /**
-   * Comma-separated channel preference, resolved left-to-right against the
-   * data we hold for the recipient (e.g. "WHATSAPP,SMS,EMAIL").
-   */
-  @Column({ type: 'text', default: 'SMS' })
-  channels!: string;
-
-  /** Message body. `{{field}}` tokens are replaced from the trigger context. */
-  @Column({ type: 'text' })
-  body!: string;
-
-  @Column({ type: 'text', default: 'en' })
-  language!: string;
-
-  /** Optional conversation-engine channel code override (defaults per type). */
-  @Column({ type: 'text', nullable: true })
-  channelCodeOverride!: string | null;
-
-  @Column({ type: 'boolean', default: true })
-  active!: boolean;
-}
-
-/**
  * Sender-app ledger: one row per outbound notification conversation message
  * sent to the conversations module. Delivery status is mirrored from the
  * exchange that the channel sender recorded.
@@ -105,6 +64,4 @@ export class NotificationDispatchEntity extends LisBaseEntity {
 
   @Column({ type: 'int', default: 0 })
   attempts!: number;
-
-  template!: NotificationTemplateEntity | null;
 }

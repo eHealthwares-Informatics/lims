@@ -1,8 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { HttpService } from '@nestjs/axios';
+import { ConfigService } from '@nestjs/config';
 import { OrderEntity, ResultEntity, ReferenceRangeEntity } from '../entities';
-import { PrintsService } from '../../prints/prints.service';
+import { PrintClientService } from '../../prints/services/print-client.service';
 
 export interface ReportRow {
   name: string;
@@ -54,7 +56,7 @@ export class ReportPdfService {
     @InjectRepository(OrderEntity) private readonly orderRepo: Repository<OrderEntity>,
     @InjectRepository(ResultEntity) private readonly resultRepo: Repository<ResultEntity>,
     @InjectRepository(ReferenceRangeEntity) private readonly rangeRepo: Repository<ReferenceRangeEntity>,
-    private readonly prints: PrintsService,
+    private readonly prints: PrintClientService,
   ) {}
 
   async buildReportData(orderId: string): Promise<ReportData> {

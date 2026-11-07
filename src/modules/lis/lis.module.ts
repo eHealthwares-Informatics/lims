@@ -42,7 +42,6 @@ import {
   TestDefinitionEntity,
   TestSectionEntity,
   UnitOfMeasurementEntity,
-  NotificationTemplateEntity,
   NotificationDispatchEntity,
 } from './entities';
 import { CodeGeneratorService } from './services/code-generator.service';
@@ -134,6 +133,7 @@ import { NotificationTriggersService } from './services/notification-triggers.se
 import { ConversationDispatchService } from './services/notification-dispatch.service';
 import { NotificationPolicyClient } from './services/notification-policy.client';
 import { LabAlertScheduler } from './services/lab-alert.scheduler';
+import { PrintClientService } from '../prints/services/print-client.service';
 
 @Module({
   imports: [
@@ -179,7 +179,6 @@ import { LabAlertScheduler } from './services/lab-alert.scheduler';
       EqaProgramEntity,
       EqaEnrollmentEntity,
       EqaResultEntity,
-      NotificationTemplateEntity,
       NotificationDispatchEntity,
     ]),
   ],
@@ -275,6 +274,7 @@ import { LabAlertScheduler } from './services/lab-alert.scheduler';
     ConversationDispatchService,
     NotificationPolicyClient,
     LabAlertScheduler,
+    PrintClientService,
   ],
   exports: [
     CodeGeneratorService,
@@ -310,6 +310,7 @@ import { LabAlertScheduler } from './services/lab-alert.scheduler';
     EqaEnrollmentsService,
     EqaResultsService,
     NotificationService,
+    PrintClientService,
   ],
 })
 export class LisModule {}

@@ -1,15 +1,16 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import axios from "axios";
 
 /**
- * Dispatch seam to the conversations module. Notifications are conversation
- * messages: they go out through the conversation engine's channel senders
- * (SMS / WhatsApp / Email), which log every attempt as a persisted `Exchange`
- * with delivery status.
+ * Dispatch seam to the conversations notification engine.
  *
- * The LIS keeps its own dispatch ledger (NotificationDispatchEntity) and
- * links each row to the conversation exchange via `exchangeId` / `contextId`.
+ * The LIS sends an event key plus context. Conversation resolves the
+ * notification template, channels, recipients and delivery ledger — the sender
+ * does not render a message or select a channel.
+ *
+ * The LIS keeps its own dispatch ledger (`NotificationDispatchEntity`) for
+ * reporting; `exchangeId` holds the conversation delivery id when present.
  */
 @Injectable()
 export class ConversationDispatchService {
@@ -18,33 +19,46 @@ export class ConversationDispatchService {
   constructor(private readonly config: ConfigService) {}
 
   private get baseUrl(): string {
-    return this.config.get<string>('CONVERSATION_API_URL', 'http://localhost:8090/api');
+    return this.config.get<string>(
+      "CONVERSATION_API_URL",
+      "http://localhost:8090/api",
+    );
   }
 
   private get internalApiKey(): string {
-    return this.config.get<string>('INTEROP_API_KEY', 'lis-interop-key-dev');
+    return this.config.get<string>("INTEROP_API_KEY", "lis-interop-key-dev");
   }
 
-  /** Default conversation-engine channel codes per channel type. */
-  private defaultChannelCode(type: string): string {
-    switch (type) {
-      case 'WHATSAPP':
-        return 'LIS_WHATSAPP';
-      case 'EMAIL':
-        return 'LIS_EMAIL';
-      case 'SMS':
+  /** Map LIS trigger keys onto the conversation notification event keys. */
+  private eventKey(type: string): string {
+    switch (String(type ?? "").toUpperCase()) {
+      case "RESULT_READY":
+      case "RESULT_AMENDED":
+        return "final_result";
+      case "SAMPLE_RECEIVED":
+        return "sample_received";
+      case "CRITICAL_RESULT":
+        return "critical_result";
+      case "PAYMENT_REMINDER":
+        return "payment_reminder";
+      case "ORDER_TAT_BREACH":
+        return "order_tat_breach";
+      case "QC_FAILED":
+        return "qc_failed";
+      case "TEST_ORDER_RECEIVED":
+        return "test_order_received";
       default:
-        return 'LIS_SMS';
+        return String(type ?? "").toLowerCase();
     }
   }
 
   /**
-   * Sends a notification conversation message on one channel.
-   * Returns the conversation exchange id (or null when dispatch failed).
+   * Sends a notification event through the conversation engine.
+   * Returns the conversation delivery id when a channel accepted it.
    */
   async send(params: {
+    organizationId?: string | null;
     channelType: string;
-    channelCodeOverride?: string | null;
     phone?: string | null;
     email?: string | null;
     title: string;
@@ -56,42 +70,62 @@ export class ConversationDispatchService {
     relatedEntityType?: string | null;
     relatedEntityId?: string | null;
   }): Promise<{ ok: boolean; exchangeId?: string | null; error?: string }> {
-    const channelCode =
-      params.channelCodeOverride || this.defaultChannelCode(params.channelType);
+    const recipients = {
+      phone: params.phone ?? undefined,
+      email: params.email ?? undefined,
+    };
 
-    const form = new FormData();
-    form.append('code', channelCode);
-    if (params.phone) form.append('phone', params.phone);
-    if (params.email) form.append('email', params.email);
-    form.append('title', params.title);
-    form.append('message', params.message);
-    form.append('context', JSON.stringify({
-      source: 'lis-notification',
-      sourceApp: params.sourceApp,
-      eventType: params.eventType,
-      contextId: params.contextId,
-      relatedEntityType: params.relatedEntityType ?? null,
-      relatedEntityId: params.relatedEntityId ?? null,
-    }));
+    if (!recipients.phone && !recipients.email) {
+      return { ok: false, error: "No recipient for notification" };
+    }
 
     try {
       const response = await axios.post(
-        `${this.baseUrl}/channels/send-message`,
-        form,
+        `${this.baseUrl}/notification-dispatch/event`,
         {
-          headers: { 'x-api-key': this.internalApiKey, ...(form as any).getHeaders?.() },
+          organizationId: params.organizationId ?? null,
+          eventKey: this.eventKey(params.eventType),
+          context: {
+            source: "lis-notification",
+            sourceApp: params.sourceApp,
+            eventType: params.eventType,
+            channelType: params.channelType,
+            contextId: params.contextId,
+            title: params.title,
+            message: params.message,
+            recipients,
+            relatedEntityType: params.relatedEntityType ?? null,
+            relatedEntityId: params.relatedEntityId ?? null,
+          },
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": this.internalApiKey,
+          },
           timeout: 30_000,
         },
       );
+
       const data = response.data ?? {};
+      const sent = Number(data?.sent ?? 0);
+      const failed = Number(data?.failed ?? 0);
+      const deliveries = Array.isArray(data?.deliveries) ? data.deliveries : [];
+
       return {
-        ok: true,
-        exchangeId: data?.id ?? data?.exchangeId ?? null,
+        ok: sent > 0,
+        exchangeId: deliveries[0] ?? null,
+        error:
+          sent > 0
+            ? undefined
+            : failed > 0
+              ? "Conversation notification dispatch failed"
+              : "No conversation notification channel available",
       };
     } catch (error: any) {
       const detail = error?.response?.data ?? error?.message ?? error;
       this.logger.error(
-        `Conversation dispatch failed channel=${channelCode} to=${params.phone || params.email}: ${JSON.stringify(detail)}`,
+        `Conversation dispatch failed event=${params.eventType} to=${recipients.phone || recipients.email}: ${JSON.stringify(detail)}`,
       );
       return { ok: false, error: JSON.stringify(detail) };
     }
