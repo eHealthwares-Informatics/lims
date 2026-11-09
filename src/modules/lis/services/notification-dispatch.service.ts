@@ -58,44 +58,46 @@ export class ConversationDispatchService {
    */
   async send(params: {
     organizationId?: string | null;
-    channelType: string;
     phone?: string | null;
     email?: string | null;
     title: string;
     message: string;
+    /** Template variables forwarded to conversation. */
+    context?: Record<string, unknown>;
     /** Stable id used as the exchange contextId for dedupe. */
     contextId: string;
     sourceApp: string;
     eventType: string;
     relatedEntityType?: string | null;
     relatedEntityId?: string | null;
-  }): Promise<{ ok: boolean; exchangeId?: string | null; error?: string }> {
+  }): Promise<{ ok: boolean; exchangeId?: string | null; deliveries: string[]; error?: string }> {
     const recipients = {
       phone: params.phone ?? undefined,
       email: params.email ?? undefined,
     };
 
     if (!recipients.phone && !recipients.email) {
-      return { ok: false, error: "No recipient for notification" };
+      return { ok: false, deliveries: [], error: "No recipient for notification" };
     }
 
     try {
       const response = await axios.post(
-        `${this.baseUrl}/notification-dispatch/event`,
+        `${this.baseUrl}/notification-dispatch/send`,
         {
+          // Normalised contract: eventKey + organizationId + recipients + context.
           organizationId: params.organizationId ?? null,
           eventKey: this.eventKey(params.eventType),
+          recipients,
           context: {
             source: "lis-notification",
             sourceApp: params.sourceApp,
             eventType: params.eventType,
-            channelType: params.channelType,
             contextId: params.contextId,
             title: params.title,
             message: params.message,
-            recipients,
             relatedEntityType: params.relatedEntityType ?? null,
             relatedEntityId: params.relatedEntityId ?? null,
+            ...(params.context ?? {}),
           },
         },
         {
@@ -115,6 +117,7 @@ export class ConversationDispatchService {
       return {
         ok: sent > 0,
         exchangeId: deliveries[0] ?? null,
+        deliveries,
         error:
           sent > 0
             ? undefined
@@ -127,7 +130,7 @@ export class ConversationDispatchService {
       this.logger.error(
         `Conversation dispatch failed event=${params.eventType} to=${recipients.phone || recipients.email}: ${JSON.stringify(detail)}`,
       );
-      return { ok: false, error: JSON.stringify(detail) };
+      return { ok: false, deliveries: [], error: JSON.stringify(detail) };
     }
   }
 }

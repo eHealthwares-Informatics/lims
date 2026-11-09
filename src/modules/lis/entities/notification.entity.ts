@@ -1,7 +1,6 @@
 import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { LisBaseEntity } from './lis-base.entity';
 
-export type NotificationChannel = 'SMS' | 'WHATSAPP' | 'EMAIL';
 export type NotificationStatus = 'PENDING' | 'SENT' | 'FAILED';
 export type NotificationAudience = 'PATIENT' | 'DOCTOR' | 'LAB';
 
@@ -15,6 +14,10 @@ export class NotificationDispatchEntity extends LisBaseEntity {
   @Index()
   @Column({ type: 'text' })
   eventKey!: string;
+
+  /** Human-readable subject line used when the notification was dispatched. */
+  @Column({ type: 'text', nullable: true })
+  title!: string | null;
 
   @Column({ type: 'text', nullable: true })
   audience!: NotificationAudience | null;
@@ -41,16 +44,6 @@ export class NotificationDispatchEntity extends LisBaseEntity {
   @Column({ type: 'text', nullable: true })
   contextId!: string | null;
 
-  @Column({ type: 'text', nullable: true })
-  channelCode!: string | null;
-
-  /** Primary channel when this row is a fallback attempt. */
-  @Column({ name: 'fallback_from', type: 'text', nullable: true })
-  fallbackFrom!: string | null;
-
-  @Column({ type: 'text', nullable: true })
-  templateCodeUsed!: string | null;
-
   /** Rendered body actually dispatched. */
   @Column({ type: 'text', nullable: true })
   renderedBody!: string | null;
@@ -64,4 +57,16 @@ export class NotificationDispatchEntity extends LisBaseEntity {
 
   @Column({ type: 'int', default: 0 })
   attempts!: number;
+
+  /**
+   * Full parameters handed to the conversation dispatch service. Replayed
+   * verbatim by `retrigger()` (with a fresh contextId so conversation does not
+   * de-duplicate the resend).
+   */
+  @Column({ name: 'request_payload', type: 'jsonb', nullable: true })
+  requestPayload!: Record<string, unknown> | null;
+
+  /** Ledger row this dispatch was re-triggered from, when applicable. */
+  @Column({ name: 'retriggered_from_id', type: 'text', nullable: true })
+  retriggeredFromId!: string | null;
 }

@@ -131,7 +131,6 @@ import { NotificationTriggersController } from './controllers/notifications-admi
 import { NotificationService } from './services/notification.service';
 import { NotificationTriggersService } from './services/notification-triggers.service';
 import { ConversationDispatchService } from './services/notification-dispatch.service';
-import { NotificationPolicyClient } from './services/notification-policy.client';
 import { LabAlertScheduler } from './services/lab-alert.scheduler';
 import { PrintClientService } from '../prints/services/print-client.service';
 
@@ -272,7 +271,6 @@ import { PrintClientService } from '../prints/services/print-client.service';
     NotificationService,
     NotificationTriggersService,
     ConversationDispatchService,
-    NotificationPolicyClient,
     LabAlertScheduler,
     PrintClientService,
   ],

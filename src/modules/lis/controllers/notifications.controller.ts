@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import type { RequestUser } from '../../../common/decorators/current-user.decorator';
@@ -7,11 +7,10 @@ import { NotificationService } from '../services/notification.service';
 import { NotificationTriggersService } from '../services/notification-triggers.service';
 
 /**
- * Notification engine endpoints (#107 BE engine, #113 history data):
- * - Template CRUD/configuration
- * - Dispatch history (sender-app ledger of messages sent through the
- *   conversations module, with delivery status)
- * - Manual re-emit / delivery-status sync
+ * LIS notification history endpoints.
+ *
+ * Template management lives in the conversation service — LIS only records the
+ * sender-app ledger of events it hands to conversation and can replay them.
  */
 @ApiTags('lis')
 @Controller('lis/notifications')
@@ -20,40 +19,6 @@ export class NotificationsController {
     private readonly notifications: NotificationService,
     private readonly triggers: NotificationTriggersService,
   ) {}
-
-  // ---------------------------------------------------------------- templates
-
-  @Get('templates')
-  @ApiOperation({ summary: 'List notification templates' })
-  async templates(@Query('eventKey') eventKey: string | undefined, @CurrentUser() user: RequestUser) {
-    const data = await this.notifications.listTemplates(tenantFromUser(user), eventKey);
-    return { data };
-  }
-
-  @Post('templates')
-  @ApiOperation({ summary: 'Create or update a notification template' })
-  async upsertTemplate(
-    @Body()
-    payload: {
-      templateCode: string;
-      eventKey: string;
-      audience: 'PATIENT' | 'DOCTOR' | 'LAB';
-      channels?: string;
-      body: string;
-      language?: string;
-      channelCodeOverride?: string;
-      active?: boolean;
-    },
-    @CurrentUser() user: RequestUser,
-  ) {
-    const tenant = tenantFromUser(user);
-    const created = await this.notifications.upsertTemplate({
-      ...payload,
-      organizationId: tenant?.organizationId ?? null,
-      locationId: tenant?.locationId ?? null,
-    } as any);
-    return created;
-  }
 
   // ---------------------------------------------------------------- history
 
@@ -74,6 +39,31 @@ export class NotificationsController {
       tenantFromUser(user),
     );
     return { data: result.data, total: result.total };
+  }
+
+  /** Canonical path used by the LIS notification UI. */
+  @Get('dispatches')
+  @ApiOperation({
+    summary: 'Notification dispatch ledger (alias of /history)',
+  })
+  async dispatches(
+    @Query('eventKey') eventKey: string | undefined,
+    @Query('status') status: string | undefined,
+    @Query('audience') audience: string | undefined,
+    @Query('relatedEntityId') relatedEntityId: string | undefined,
+    @CurrentUser() user: RequestUser,
+  ) {
+    const result = await this.notifications.listDispatches(
+      { eventKey, status, audience, relatedEntityId },
+      tenantFromUser(user),
+    );
+    return { data: result.data, total: result.total };
+  }
+
+  @Post('dispatches/:id/retrigger')
+  @ApiOperation({ summary: 'Re-send a notification dispatch ledger entry' })
+  async retrigger(@Param('id') id: string, @CurrentUser() user: RequestUser) {
+    return this.notifications.retrigger(id, tenantFromUser(user));
   }
 
   @Get('history/:id')

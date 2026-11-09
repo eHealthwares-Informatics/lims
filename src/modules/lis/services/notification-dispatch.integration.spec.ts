@@ -24,10 +24,9 @@ describe("ConversationDispatchService (notification event)", () => {
     jest.restoreAllMocks();
   });
 
-  it("posts an event + context to /notification-dispatch/event", async () => {
+  it("posts an event + context to /notification-dispatch/send", async () => {
     const result = await service.send({
       organizationId: "org-1",
-      channelType: "SMS",
       phone: "+2348000000001",
       title: "Sample received",
       message: "Your sample was received",
@@ -41,12 +40,13 @@ describe("ConversationDispatchService (notification event)", () => {
     expect(result).toEqual({
       ok: true,
       exchangeId: "delivery-1",
+      deliveries: ["delivery-1"],
       error: undefined,
     });
     expect(post).toHaveBeenCalledTimes(1);
     const [url, body, options] = post.mock.calls[0];
     expect(url).toBe(
-      "http://conversation.test/api/notification-dispatch/event",
+      "http://conversation.test/api/notification-dispatch/send",
     );
     expect(options.headers).toMatchObject({
       "Content-Type": "application/json",
@@ -55,6 +55,7 @@ describe("ConversationDispatchService (notification event)", () => {
     expect(body).toMatchObject({
       organizationId: "org-1",
       eventKey: "sample_received",
+      recipients: { phone: "+2348000000001" },
       context: {
         source: "lis-notification",
         sourceApp: "lis",
@@ -62,7 +63,6 @@ describe("ConversationDispatchService (notification event)", () => {
         contextId: "ledger-1",
         title: "Sample received",
         message: "Your sample was received",
-        recipients: { phone: "+2348000000001" },
       },
     });
     // No sender-side channel selection or rendered subject/message top-level.
@@ -72,7 +72,6 @@ describe("ConversationDispatchService (notification event)", () => {
 
   it("maps result events onto final_result", async () => {
     await service.send({
-      channelType: "EMAIL",
       email: "patient@example.com",
       title: "Result ready",
       message: "Your result is ready",
@@ -86,7 +85,6 @@ describe("ConversationDispatchService (notification event)", () => {
 
   it("maps result amendments onto final_result", async () => {
     await service.send({
-      channelType: "SMS",
       phone: "+2348000000001",
       title: "Result amended",
       message: "Your result was amended",
@@ -98,9 +96,8 @@ describe("ConversationDispatchService (notification event)", () => {
     expect(post.mock.calls[0][1].eventKey).toBe("final_result");
   });
 
-  it("passes both recipient channels in context", async () => {
+  it("passes both recipient channels at the top level", async () => {
     await service.send({
-      channelType: "SMS",
       phone: "+2348000000001",
       email: "patient@example.com",
       title: "T",
@@ -110,7 +107,7 @@ describe("ConversationDispatchService (notification event)", () => {
       eventType: "CRITICAL_RESULT",
     });
 
-    expect(post.mock.calls[0][1].context.recipients).toEqual({
+    expect(post.mock.calls[0][1].recipients).toEqual({
       phone: "+2348000000001",
       email: "patient@example.com",
     });
@@ -118,7 +115,6 @@ describe("ConversationDispatchService (notification event)", () => {
 
   it("returns not-ok when the recipient is missing", async () => {
     const result = await service.send({
-      channelType: "EMAIL",
       title: "T",
       message: "M",
       contextId: "ledger-5",
@@ -134,7 +130,6 @@ describe("ConversationDispatchService (notification event)", () => {
     post.mockResolvedValue({ data: { sent: 0, failed: 1, deliveries: [] } });
 
     const result = await service.send({
-      channelType: "SMS",
       phone: "+2348000000001",
       title: "T",
       message: "M",
@@ -151,7 +146,6 @@ describe("ConversationDispatchService (notification event)", () => {
     post.mockRejectedValue(new Error("gateway down"));
 
     const result = await service.send({
-      channelType: "SMS",
       phone: "+2348000000001",
       title: "T",
       message: "M",
