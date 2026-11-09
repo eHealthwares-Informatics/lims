@@ -1,22 +1,12 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Cron } from "@nestjs/schedule";
 import { InjectRepository } from "@nestjs/typeorm";
-import { HttpService } from "@nestjs/axios";
-import { firstValueFrom } from "rxjs";
 import axios from "axios";
 import { IsNull, Repository } from "typeorm";
-import { NotificationDispatchEntity, NotificationChannel } from "../entities";
+import { NotificationDispatchEntity } from "../entities";
 import { TenantContext } from "../../../common/tenant-context";
 import { ConversationDispatchService } from "./notification-dispatch.service";
-import {
-  isChannelEnabled,
-  isEventChannelEnabled,
-  NotificationPolicyClient,
-  resolveFallbackChannel,
-  type NotificationPolicyChannel,
-  type NotificationPolicyEvent,
-} from "./notification-policy.client";
 
 /** Both the trigger event keys and the seeding payload keys. */
 export type NotificationEventKey =
@@ -28,14 +18,31 @@ export type NotificationEventKey =
   | "ORDER_TAT_BREACH"
   | "QC_FAILED";
 
+/**
+ * The exact parameters handed to `ConversationDispatchService.send`, persisted
+ * on the ledger row so a dispatch can be replayed faithfully.
+ */
+export type LisDispatchRequestPayload = {
+  organizationId: string | null;
+  /** Conversation event key (after LIS→conversation mapping). */
+  eventKey: string;
+  /** Original LIS trigger key (e.g. RESULT_READY). */
+  eventType: string;
+  recipients: { phone?: string | null; email?: string | null };
+  context: Record<string, unknown>;
+  sourceApp: string;
+  title: string;
+  message: string;
+  relatedEntityType: string | null;
+  relatedEntityId: string | null;
+};
+
 export interface NotificationTriggerContext {
   eventKey: NotificationEventKey;
   platform?: string | null;
   organizationId?: string | null;
   locationId?: string | null;
-  /** Bodies keyed by channel type; falls back to `body`. */
   body: string;
-  channels?: string[];
   recipient?: {
     phone?: string | null;
     email?: string | null;
@@ -57,351 +64,196 @@ export class NotificationService {
     private readonly dispatchRepo: Repository<NotificationDispatchEntity>,
     private readonly conversationDispatch: ConversationDispatchService,
     private readonly config: ConfigService,
-    private readonly policyClient: NotificationPolicyClient,
-    private readonly http: HttpService,
   ) {}
 
   /** Idempotency marker so a trigger can't double-fire for the same entity. */
   private static readonly DUPLICATE_WINDOW_HOURS = 24;
 
-  private baseUrl(): string {
-    return (
-      this.config.get<string>(
-        "CONVERSATION_API_URL",
-        "http://localhost:8090/api",
-      ) + "/event-templates"
-    );
-  }
-
-  private apiKey(): string {
-    return this.config.get<string>("INTEROP_API_KEY", "lims-interop-key-dev");
-  }
-
-  /**
-   * Resolves an active template for an event via the conversation engine.
-   * Falls back to null when no template is configured.
-   */
-  private async resolveTemplate(
-    eventKey: string,
-    platform: string | null,
-    tenant?: TenantContext,
-  ): Promise<{
-    templateCode: string;
-    body: string;
-    channelCodeOverride: string | null;
-    channels: string;
-    active: boolean;
-  } | null> {
-    const lookupKey = platform ?? eventKey;
-    const scopeSuffix =
-      tenant?.locationId ?? tenant?.organizationId ?? "default";
-    const scopedCode = `${lookupKey}@${scopeSuffix}`;
-    const defaultCode = `${lookupKey}@default`;
-
-    try {
-      const { data } = await firstValueFrom(
-        this.http.get<{
-          data: Array<{
-            templateCode: string;
-            body: string;
-            channelCodeOverride: string | null;
-            channels: string;
-            active: boolean;
-          }>;
-        }>(this.baseUrl(), {
-          params: { eventKey: lookupKey },
-          headers: { "x-api-key": this.apiKey() },
-        }),
-      );
-
-      const rows = data?.data ?? [];
-      // Prefer scoped match, then the seeded default.
-      const scoped = rows.find(
-        (r) => r.templateCode === scopedCode && r.active,
-      );
-      if (scoped) return scoped;
-
-      const seeded = rows.find(
-        (r) => r.templateCode === defaultCode && r.active,
-      );
-      return seeded ?? null;
-    } catch (err) {
-      this.logger.warn(
-        `Conversation template lookup failed for ${lookupKey}: ${err}`,
-      );
-      return null;
-    }
-  }
-
-  async listTemplates(
-    tenant?: TenantContext,
-    eventKey?: string,
-  ): Promise<
-    Array<{
-      templateCode: string;
-      eventKey: string;
-      audience: string;
-      channels: string;
-      body: string;
-      language: string;
-      channelCodeOverride: string | null;
-      active: boolean;
-      organizationId: string | null;
-      locationId: string | null;
-    }>
-  > {
-    try {
-      const { data } = await firstValueFrom(
-        this.http.get<{
-          data: Array<{
-            templateCode: string;
-            eventKey: string;
-            audience: string;
-            channels: string;
-            body: string;
-            language: string;
-            channelCodeOverride: string | null;
-            active: boolean;
-            organizationId: string | null;
-            locationId: string | null;
-          }>;
-        }>(this.baseUrl(), {
-          params: eventKey ? { eventKey } : {},
-          headers: { "x-api-key": this.apiKey() },
-        }),
-      );
-
-      const rows = data?.data ?? [];
-      if (tenant && !tenant.isGlobalAdmin) {
-        return rows.filter(
-          (r) =>
-            r.organizationId === tenant.organizationId ||
-            r.organizationId === null,
-        );
-      }
-      return rows;
-    } catch (err) {
-      this.logger.warn(`Conversation template list failed: ${err}`);
-      return [];
-    }
-  }
-
-  async upsertTemplate(payload: {
-    templateCode: string;
-    eventKey: string;
-    audience: string;
-    channels?: string;
-    body: string;
-    language?: string;
-    channelCodeOverride?: string;
-    active?: boolean;
-    organizationId?: string | null;
-    locationId?: string | null;
-  }): Promise<{
-    templateCode: string;
-    body: string;
-    eventKey: string;
-    audience: string;
-    channels: string;
-    language: string;
-    channelCodeOverride: string | null;
-    active: boolean;
-    organizationId: string | null;
-    locationId: string | null;
-  }> {
-    try {
-      const { data } = await firstValueFrom(
-        this.http.post(
-          this.baseUrl(),
-          {
-            templateCode: payload.templateCode,
-            eventKey: payload.eventKey,
-            audience: payload.audience ?? "PATIENT",
-            channels: payload.channels ?? "SMS",
-            body: payload.body,
-            language: payload.language ?? "en",
-            channelCodeOverride: payload.channelCodeOverride ?? null,
-            active: payload.active ?? true,
-            organizationId: payload.organizationId ?? null,
-            locationId: payload.locationId ?? null,
-          },
-          { headers: { "x-api-key": this.apiKey() } },
-        ),
-      );
-      return data;
-    } catch (err) {
-      this.logger.warn(
-        `Conversation template upsert failed for ${payload.templateCode}: ${err}`,
-      );
-      throw err;
-    }
-  }
-
   // ------------------------------------------------------------------ dispatch
 
   /**
-   * Dispatch a notification on all resolvable channels for the recipient's
-   * body previews, recording a ledger row per channel. Never throws —
-   * notification failures must not fail the LIS business operation.
+   * Dispatch one notification event through the conversation engine.
+   *
+   * Conversation owns template + channel resolution, so LIS makes a single call
+   * per event with `{ eventKey, organizationId, recipients, context }` and
+   * records one sender-app ledger row. Never throws — a notification failure
+   * must not fail the LIS business operation.
    */
   private async dispatch(
     trigger: NotificationTriggerContext,
     platform: string | null,
-    template: {
-      channels: string;
-      templateCode: string;
-      channelCodeOverride?: string | null;
-    } | null,
     tenant?: TenantContext,
   ): Promise<void> {
-    const channelsRaw = trigger.channels?.length
-      ? trigger.channels
-      : template
-        ? template.channels
-            .split(",")
-            .map((c) => c.trim())
-            .filter(Boolean)
-        : ["SMS"];
-
-    const policy = await this.policyClient.get(tenant?.organizationId);
-    const policyEvent: NotificationPolicyEvent | null =
-      trigger.eventKey === "RESULT_READY" ||
-      trigger.eventKey === "RESULT_AMENDED"
-        ? "final_result"
-        : null;
-
-    const channelTypes: NotificationChannel[] = [];
-    for (const raw of channelsRaw) {
-      const type = raw.toUpperCase() as NotificationChannel;
-      if (channelTypes.includes(type)) continue;
-      if (type === "SMS" && !trigger.recipient?.phone) continue;
-      if (type === "WHATSAPP" && !trigger.recipient?.phone) continue;
-      if (type === "EMAIL" && !trigger.recipient?.email) continue;
-
-      const channelKey = type.toLowerCase() as NotificationPolicyChannel;
-      if (!isChannelEnabled(policy, channelKey)) continue;
-      if (
-        policyEvent &&
-        !isEventChannelEnabled(policy, policyEvent, channelKey)
-      )
-        continue;
-      channelTypes.push(type);
-    }
-
-    if (!channelTypes.length) {
+    const organizationId = tenant?.organizationId ?? null;
+    const recipients = {
+      phone: trigger.recipient?.phone ?? null,
+      email: trigger.recipient?.email ?? null,
+    };
+    if (!recipients.phone && !recipients.email) {
       this.logger.warn(
-        `[notify:${trigger.eventKey}] no resolvable channel for recipient (phone=${trigger.recipient?.phone ?? "n/a"} email=${trigger.recipient?.email ?? "n/a"})`,
+        `[notify:${trigger.eventKey}] no recipient (phone/email) — skipping`,
       );
       return;
     }
 
-    for (const channelType of channelTypes) {
-      const channelKey = channelType.toLowerCase() as NotificationPolicyChannel;
-      const primaryCode =
-        template?.channelCodeOverride ??
-        policy?.channels[channelKey]?.code ??
-        null;
-      const primary = await this.sendChannel({
-        trigger,
-        template,
-        channelType,
-        channelCode: primaryCode,
-        organizationId: tenant?.organizationId ?? null,
-      });
-      if (primary.ok) continue;
+    const context: Record<string, unknown> = {
+      source: "lis-notification",
+      sourceApp: "lis",
+      eventType: trigger.eventKey,
+      platform,
+      audience: trigger.audience ?? "PATIENT",
+      locationId: trigger.locationId ?? tenant?.locationId ?? null,
+      relatedEntityType: trigger.relatedEntityType ?? null,
+      relatedEntityId: trigger.relatedEntityId ?? null,
+      title: trigger.title,
+      message: trigger.body,
+      ...trigger.variables,
+    };
 
-      const fallback = resolveFallbackChannel(policy, channelKey);
-      if (!fallback) continue;
-      if (!isChannelEnabled(policy, fallback)) continue;
-      if (policyEvent && !isEventChannelEnabled(policy, policyEvent, fallback))
-        continue;
-
-      const fallbackType = fallback.toUpperCase() as NotificationChannel;
-      const fallbackRecipient =
-        fallbackType === "EMAIL"
-          ? trigger.recipient?.email
-          : trigger.recipient?.phone;
-      if (!fallbackRecipient) continue;
-
-      await this.sendChannel({
-        trigger,
-        template,
-        channelType: fallbackType,
-        channelCode: policy?.channels[fallback]?.code ?? null,
-        fallbackFrom: channelType,
-        organizationId: tenant?.organizationId ?? null,
-      });
-    }
-  }
-
-  /** One channel attempt + its ledger row. */
-  private async sendChannel(params: {
-    trigger: NotificationTriggerContext;
-    template: { templateCode: string } | null;
-    channelType: NotificationChannel;
-    channelCode: string | null;
-    fallbackFrom?: NotificationChannel;
-    organizationId: string | null;
-  }): Promise<{ ok: boolean }> {
-    const {
-      trigger,
-      template,
-      channelType,
-      channelCode,
-      fallbackFrom,
+    const requestPayload: LisDispatchRequestPayload = {
       organizationId,
-    } = params;
+      eventKey: trigger.eventKey,
+      eventType: trigger.eventKey,
+      recipients,
+      context,
+      sourceApp: "lis",
+      title: trigger.title,
+      message: trigger.body,
+      relatedEntityType: trigger.relatedEntityType ?? null,
+      relatedEntityId: trigger.relatedEntityId ?? null,
+    };
 
     const ledger = await this.dispatchRepo.save(
       this.dispatchRepo.create({
+        organizationId,
+        locationId: trigger.locationId ?? tenant?.locationId ?? null,
         eventKey: trigger.eventKey,
+        title: trigger.title,
         audience: trigger.audience ?? "PATIENT",
-        recipientAddress:
-          channelType === "EMAIL"
-            ? trigger.recipient?.email
-            : trigger.recipient?.phone,
+        recipientAddress: recipients.email ?? recipients.phone,
         relatedEntityType: trigger.relatedEntityType ?? null,
         relatedEntityId: trigger.relatedEntityId ?? null,
         status: "PENDING",
-        channelCode,
-        fallbackFrom: fallbackFrom ?? null,
-        templateCodeUsed: template?.templateCode ?? null,
         renderedBody: trigger.body,
+        requestPayload: requestPayload as unknown as Record<string, unknown>,
       }),
     );
 
     const result = await this.conversationDispatch.send({
       organizationId,
-      channelType,
-      phone: trigger.recipient?.phone ?? null,
-      email: trigger.recipient?.email ?? null,
+      eventType: trigger.eventKey,
+      phone: recipients.phone,
+      email: recipients.email,
       title: trigger.title,
       message: trigger.body,
+      context,
       contextId: `${ledger.id}`,
       sourceApp: "lis",
-      eventType: trigger.eventKey,
-      relatedEntityType: trigger.relatedEntityType,
-      relatedEntityId: trigger.relatedEntityId,
+      relatedEntityType: trigger.relatedEntityType ?? null,
+      relatedEntityId: trigger.relatedEntityId ?? null,
     });
 
     await this.dispatchRepo.update(
       { id: ledger.id },
       {
         status: result.ok ? "SENT" : "FAILED",
-        exchangeId: result.exchangeId ?? null,
+        exchangeId: result.deliveries[0] ?? null,
         contextId: `${ledger.id}`,
         failureReason: result.error ?? null,
         sentAt: result.ok ? new Date() : null,
         attempts: (ledger.attempts ?? 0) + 1,
       },
     );
-
-    return { ok: result.ok };
   }
 
   /**
-   * Emit a notification event. Fires the matching template(s) for the
-   * recipient (audience determines which template set applies).
+   * Replays a ledger row through the conversation engine. Creates a NEW ledger
+   * entry linked to the original (`retriggeredFromId`) so the audit trail shows
+   * both attempts; conversation de-dupe is bypassed with a fresh contextId.
+   */
+  async retrigger(
+    id: string,
+    tenant?: TenantContext,
+  ): Promise<{ ok: boolean; dispatchId: string }> {
+    const original = await this.dispatchRepo.findOne({ where: { id } });
+    if (!original) {
+      throw new NotFoundException("Notification dispatch not found");
+    }
+
+    const stored = (original.requestPayload ?? {}) as Partial<LisDispatchRequestPayload>;
+    const eventType = stored.eventType ?? original.eventKey;
+    const recipients =
+      stored.recipients ??
+      ({
+        phone: original.recipientAddress,
+        email: null,
+      } as { phone?: string | null; email?: string | null });
+    const organizationId =
+      original.organizationId ?? tenant?.organizationId ?? stored.organizationId ?? null;
+    const title = stored.title ?? original.title ?? original.eventKey;
+    const message = stored.message ?? original.renderedBody ?? "";
+    const context = stored.context ?? {};
+
+    const ledger = await this.dispatchRepo.save(
+      this.dispatchRepo.create({
+        organizationId,
+        locationId: original.locationId ?? tenant?.locationId ?? null,
+        eventKey: original.eventKey,
+        title,
+        audience: original.audience,
+        recipientAddress: original.recipientAddress,
+        relatedEntityType: stored.relatedEntityType ?? original.relatedEntityType ?? null,
+        relatedEntityId: stored.relatedEntityId ?? original.relatedEntityId ?? null,
+        status: "PENDING",
+        renderedBody: message,
+        requestPayload: {
+          organizationId,
+          eventKey: original.eventKey,
+          eventType,
+          recipients,
+          context,
+          sourceApp: "lis",
+          title,
+          message,
+          relatedEntityType: stored.relatedEntityType ?? original.relatedEntityType ?? null,
+          relatedEntityId: stored.relatedEntityId ?? original.relatedEntityId ?? null,
+        } as unknown as Record<string, unknown>,
+        retriggeredFromId: original.id,
+      }),
+    );
+
+    const result = await this.conversationDispatch.send({
+      organizationId,
+      eventType,
+      phone: recipients.phone ?? null,
+      email: recipients.email ?? null,
+      title,
+      message,
+      context,
+      contextId: `${ledger.id}`,
+      sourceApp: "lis",
+      relatedEntityType: stored.relatedEntityType ?? original.relatedEntityType ?? null,
+      relatedEntityId: stored.relatedEntityId ?? original.relatedEntityId ?? null,
+    });
+
+    await this.dispatchRepo.update(
+      { id: ledger.id },
+      {
+        status: result.ok ? "SENT" : "FAILED",
+        exchangeId: result.deliveries[0] ?? null,
+        contextId: `${ledger.id}`,
+        failureReason: result.error ?? null,
+        sentAt: result.ok ? new Date() : null,
+        attempts: 1,
+      },
+    );
+
+    return { ok: result.ok, dispatchId: ledger.id };
+  }
+
+  /**
+   * Emit a notification event. Conversation resolves the template and channels
+   * from the event key; LIS supplies recipients + template context.
    */
   async emit(
     trigger: NotificationTriggerContext,
@@ -409,12 +261,7 @@ export class NotificationService {
     platform: string | null = null,
   ): Promise<void> {
     try {
-      const template = await this.resolveTemplate(
-        trigger.eventKey,
-        platform,
-        tenant,
-      );
-      await this.dispatch(trigger, platform, template, tenant);
+      await this.dispatch(trigger, platform, tenant);
     } catch (error: any) {
       this.logger.error(
         `[notify:${trigger.eventKey}] dispatch failed: ${error?.message ?? error}`,
