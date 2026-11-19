@@ -6,6 +6,7 @@ import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreatePanelDto } from '../dto/panel.dto';
 import { TenantContext } from '../../../common/tenant-context';
+import { assertCanWriteRow } from '../../../common/tenant-scope';
 
 @Injectable()
 export class PanelsService extends BaseLisService<PanelEntity> {
@@ -67,10 +68,8 @@ export class PanelsService extends BaseLisService<PanelEntity> {
   }
 
   async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
-    const panel = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['panelItems'] });
-    if (!panel) {
-      throw new BadRequestException('Panel not found');
-    }
+    const panel = await this.findOne(id, tenant);
+    assertCanWriteRow(panel as any, tenant);
     if (payload.name) panel.name = payload.name as string;
     if (payload.description !== undefined) panel.description = payload.description as string | null;
     if (payload.active !== undefined) panel.active = payload.active as boolean;
@@ -92,14 +91,12 @@ export class PanelsService extends BaseLisService<PanelEntity> {
         );
       }
     }
-    return this.findOne(id);
+    return this.findOne(id, tenant);
   }
 
   async replace(id: string, payload: CreatePanelDto, tenant?: TenantContext): Promise<any> {
-    const panel = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['panelItems'] });
-    if (!panel) {
-      throw new BadRequestException('Panel not found');
-    }
+    const panel = await this.findOne(id, tenant);
+    assertCanWriteRow(panel as any, tenant);
     const code = payload.code ?? panel.code;
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate && duplicate.id !== id) {
@@ -125,6 +122,6 @@ export class PanelsService extends BaseLisService<PanelEntity> {
         ),
       );
     }
-    return this.findOne(saved.id);
+    return this.findOne(saved.id, tenant);
   }
 }
