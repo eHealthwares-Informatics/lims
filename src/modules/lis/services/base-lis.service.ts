@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Brackets, IsNull, Repository } from 'typeorm';
 import { ListQueryDto } from '../../../shared/dto/list-query.dto';
 import { TenantContext } from '../../../common/tenant-context';
+import { assertCanWriteRow } from '../../../common/tenant-scope';
 import { LisBaseEntity } from '../entities';
 
 export interface ListResponse<T> {
@@ -127,9 +128,39 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
     return this.serialize(item);
   }
 
+  /**
+   * Columns that may never be reassigned by tenants. A super admin may move a
+   * record between organisations/locations (e.g. promoting a QC/EQA row from
+   * global to an organisation), so those columns are unblocked for them.
+   */
+  private blockedUpdateColumns(tenant?: TenantContext): Set<string> {
+    const blocked = new Set([
+      'id',
+      'createdAt',
+      'created_at',
+      'updatedAt',
+      'updated_at',
+      'deletedAt',
+      'deleted_at',
+      'organizationId',
+      'organization_id',
+      'locationId',
+      'location_id',
+    ]);
+    if (tenant?.isSuperAdmin) {
+      blocked.delete('organizationId');
+      blocked.delete('organization_id');
+      blocked.delete('locationId');
+      blocked.delete('location_id');
+    }
+    return blocked;
+  }
+
   async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
     const item = await this.findOne(id, tenant);
-    const blocked = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'organizationId', 'organization_id', 'locationId', 'location_id']);
+    // Shared/global rows are read-only for normal tenants.
+    assertCanWriteRow(item as any, tenant);
+    const blocked = this.blockedUpdateColumns(tenant);
     for (const [key, value] of Object.entries(payload)) {
       if (!blocked.has(key)) {
         (item as any)[key] = value;
@@ -141,7 +172,8 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
 
   async replace(id: string, payload: any, tenant?: TenantContext): Promise<any> {
     const item = await this.findOne(id, tenant);
-    const blocked = new Set(['id', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'deletedAt', 'deleted_at', 'organizationId', 'organization_id', 'locationId', 'location_id']);
+    assertCanWriteRow(item as any, tenant);
+    const blocked = this.blockedUpdateColumns(tenant);
     for (const [key, value] of Object.entries(payload)) {
       if (!blocked.has(key)) {
         (item as any)[key] = value;
@@ -153,6 +185,7 @@ export abstract class BaseLisService<T extends LisBaseEntity> {
 
   async archive(id: string, tenant?: TenantContext): Promise<void> {
     const item = await this.findOne(id, tenant);
+    assertCanWriteRow(item as any, tenant);
     const result = await this.repo.softDelete(item.id);
     if (!result.affected) {
       throw new NotFoundException('Record not found');
