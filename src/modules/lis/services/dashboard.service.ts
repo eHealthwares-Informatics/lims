@@ -247,6 +247,9 @@ export class DashboardService {
       .andWhere('r.status = :status', { status: 'FINALIZED' })
       .andWhere('r."validatedDate" IS NOT NULL')
       .andWhere('r."enteredDate" IS NOT NULL')
+      .andWhere('(:orgId IS NULL OR r.organization_id = :orgId OR r.organization_id IS NULL)', {
+        orgId: organizationId,
+      })
       .getRawOne();
 
     return {

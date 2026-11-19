@@ -6,6 +6,7 @@ import { CodeGeneratorService } from './code-generator.service';
 import { BaseLisService } from './base-lis.service';
 import { CreateProgramDto } from '../dto/program.dto';
 import { TenantContext } from '../../../common/tenant-context';
+import { assertCanWriteRow } from '../../../common/tenant-scope';
 
 @Injectable()
 export class ProgramsService extends BaseLisService<ProgramEntity> {
@@ -54,10 +55,8 @@ export class ProgramsService extends BaseLisService<ProgramEntity> {
   }
 
   async update(id: string, payload: Record<string, unknown>, tenant?: TenantContext): Promise<any> {
-    const item = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['testDefinitions'] });
-    if (!item) {
-      throw new BadRequestException('Record not found');
-    }
+    const item = await this.findOne(id, tenant);
+    assertCanWriteRow(item as any, tenant);
     if (payload.name) item.name = payload.name as string;
     if (payload.description !== undefined) item.description = payload.description as string | null;
     if (payload.active !== undefined) item.active = payload.active as boolean;
@@ -66,14 +65,12 @@ export class ProgramsService extends BaseLisService<ProgramEntity> {
       item.testDefinitions = ids.length ? await this.testDefRepo.findBy({ id: In(ids) }) : [];
     }
     await this.repo.save(item);
-    return this.findOne(id);
+    return this.findOne(id, tenant);
   }
 
   async replace(id: string, payload: CreateProgramDto, tenant?: TenantContext): Promise<any> {
-    const item = await this.repo.findOne({ where: { id, deletedAt: null } as any, relations: ['testDefinitions'] });
-    if (!item) {
-      throw new BadRequestException('Record not found');
-    }
+    const item = await this.findOne(id, tenant);
+    assertCanWriteRow(item as any, tenant);
     const code = payload.code ?? item.code;
     const duplicate = await this.repo.findOne({ where: { code, deletedAt: null } as any });
     if (duplicate && duplicate.id !== id) {
@@ -90,6 +87,6 @@ export class ProgramsService extends BaseLisService<ProgramEntity> {
       testDefinitions,
       active: payload.active ?? true,
     });
-    return this.findOne(saved.id);
+    return this.findOne(saved.id, tenant);
   }
 }
