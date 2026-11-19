@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { resolveTenantClaims } from '../tenant-context';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -19,9 +20,23 @@ export class JwtAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const request = context.switchToHttp().getRequest<{
+      headers: Record<string, string | string[] | undefined>;
+      user?: unknown;
+    }>();
+
     if (process.env.SKIP_AUTH === 'true') {
-      const request = context.switchToHttp().getRequest();
-      request.user = { sub: 'skip-auth-user', organizationId: '00000000-0000-0000-0000-000000000000', locationId: null, username: 'skip-auth', roles: [], permissions: [] };
+      request.user = resolveTenantClaims(
+        {
+          sub: 'skip-auth-user',
+          organizationId: '00000000-0000-0000-0000-000000000000',
+          locationId: null,
+          username: 'skip-auth',
+          roles: [],
+          permissions: [],
+        },
+        request.headers,
+      );
       return true;
     }
 
@@ -31,8 +46,8 @@ export class JwtAuthGuard implements CanActivate {
     ]);
     if (isPublic) return true;
 
-    const request = context.switchToHttp().getRequest();
-    const authHeader = request.headers.authorization;
+    const rawAuthHeader = request.headers.authorization;
+    const authHeader = Array.isArray(rawAuthHeader) ? rawAuthHeader[0] : rawAuthHeader;
     if (!authHeader?.startsWith('Bearer ')) {
       throw new UnauthorizedException('Missing bearer token');
     }
@@ -45,7 +60,10 @@ export class JwtAuthGuard implements CanActivate {
       throw new InternalServerErrorException('JWT_ACCESS_SECRET is not configured');
     }
     try {
-      request.user = await this.jwtService.verifyAsync(token, { secret });
+      const payload = await this.jwtService.verifyAsync<Record<string, any>>(token, { secret });
+      // Normalise blank tenant claims and apply the super-admin header
+      // overrides so no downstream query receives `organizationId: ""`.
+      request.user = resolveTenantClaims(payload, request.headers);
       return true;
     } catch {
       throw new UnauthorizedException('Invalid access token');

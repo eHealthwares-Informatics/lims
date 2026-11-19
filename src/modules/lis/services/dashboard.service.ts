@@ -15,10 +15,12 @@ export class DashboardService {
   }
 
   private orgFilter(col = 'o'): string {
-    return `(${col}.organization_id = :orgId OR ${col}.organization_id IS NULL)`;
+    // `:orgId IS NULL` admits every organisation (global administrator with no
+    // selection) while keeping the bind parameter present for all callers.
+    return `(:orgId IS NULL OR ${col}.organization_id = :orgId OR ${col}.organization_id IS NULL)`;
   }
 
-  async getMetrics(organizationId: string, userId?: string | null) {
+  async getMetrics(organizationId: string | null, userId?: string | null) {
     const [totalOrders] = await this.totalOrders(organizationId);
     const [ordersInProgress] = await this.ordersInProgressCount(organizationId);
     const [ordersCompletedToday] = await this.ordersCompletedTodayCount(organizationId);
@@ -57,7 +59,7 @@ export class DashboardService {
 
   // ── Count queries ────────────────────────────────────────────────
 
-  async totalOrders(organizationId: string): Promise<[number, number]> {
+  async totalOrders(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_orders', 'o')
@@ -67,7 +69,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async ordersInProgressCount(organizationId: string): Promise<[number, number]> {
+  async ordersInProgressCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_orders', 'o')
@@ -78,7 +80,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async ordersCompletedTodayCount(organizationId: string): Promise<[number, number]> {
+  async ordersCompletedTodayCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_orders', 'o')
@@ -89,7 +91,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async receivedTodayCount(organizationId: string): Promise<[number, number]> {
+  async receivedTodayCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_orders', 'o')
@@ -100,7 +102,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async pendingResultsCount(organizationId: string): Promise<[number, number]> {
+  async pendingResultsCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_results', 'r')
@@ -113,7 +115,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async readyForValidationCount(organizationId: string): Promise<[number, number]> {
+  async readyForValidationCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_results', 'r')
@@ -126,7 +128,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async partiallyCompletedTodayCount(organizationId: string): Promise<[number, number]> {
+  async partiallyCompletedTodayCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(DISTINCT o.id)', 'count')
       .from('lis_orders', 'o')
@@ -142,7 +144,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async enteredByUserTodayCount(organizationId: string, userId?: string | null): Promise<[number, number]> {
+  async enteredByUserTodayCount(organizationId: string | null, userId?: string | null): Promise<[number, number]> {
     if (!userId) return [0, 0];
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
@@ -155,7 +157,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async rejectedTodayCount(organizationId: string): Promise<[number, number]> {
+  async rejectedTodayCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_samples', 's')
@@ -168,7 +170,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async unprintedResultsCount(organizationId: string): Promise<[number, number]> {
+  async unprintedResultsCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_results', 'r')
@@ -182,7 +184,7 @@ export class DashboardService {
     return [Number(result?.count ?? 0), 0];
   }
 
-  async averageTurnAroundTime(organizationId: string): Promise<[number, number]> {
+  async averageTurnAroundTime(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select("COALESCE(AVG(EXTRACT(EPOCH FROM (o.\"completedDate\"::timestamp - o.\"receivedDate\"::timestamp)) / 60), 0)", 'avgMinutes')
       .from('lis_orders', 'o')
@@ -194,7 +196,7 @@ export class DashboardService {
     return [Number(result?.avgMinutes ?? 0), 0];
   }
 
-  async delayedTurnAroundCount(organizationId: string): Promise<[number, number]> {
+  async delayedTurnAroundCount(organizationId: string | null): Promise<[number, number]> {
     const result = await this.dataSource.createQueryBuilder()
       .select('COUNT(*)', 'count')
       .from('lis_orders', 'o')
@@ -209,7 +211,7 @@ export class DashboardService {
 
   // ── TAT sub-metrics ──────────────────────────────────────────────
 
-  async tatSubMetricsCalc(organizationId: string): Promise<{
+  async tatSubMetricsCalc(organizationId: string | null): Promise<{
     receptionToValidationHours: number;
     receptionToResultHours: number;
     resultToValidationHours: number;
@@ -256,7 +258,7 @@ export class DashboardService {
 
   // ── Daily trend ──────────────────────────────────────────────────
 
-  async dailyOrderTrend(organizationId: string): Promise<{ date: string; received: number; completed: number }[]> {
+  async dailyOrderTrend(organizationId: string | null): Promise<{ date: string; received: number; completed: number }[]> {
     const received = await this.dataSource.createQueryBuilder()
       .select('o."receivedDate"::date', 'date')
       .addSelect('COUNT(*)', 'count')
@@ -304,7 +306,7 @@ export class DashboardService {
 
   async getMetricItems(
     type: string,
-    organizationId: string,
+    organizationId: string | null,
     userId?: string | null,
     pagination?: { offset?: number; limit?: number },
   ): Promise<{ data: Record<string, any>[]; total: number }> {
@@ -335,7 +337,7 @@ export class DashboardService {
     }
   }
 
-  private async drilldownOrdersInProgress(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownOrdersInProgress(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_orders', 'o')
       .where('o.deleted_at IS NULL')
@@ -354,7 +356,7 @@ export class DashboardService {
     return { data: rows.map(this.mapOrderRow), total };
   }
 
-  private async drilldownReadyForValidation(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownReadyForValidation(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_results', 'r')
       .innerJoin('lis_order_items', 'oi', 'r.order_item_id = oi.id')
@@ -375,7 +377,7 @@ export class DashboardService {
     return { data: rows.map((r) => ({ orderNumber: r.orderNumber, patientName: r.patientName, resultValue: r.value })), total };
   }
 
-  private async drilldownCompletedToday(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownCompletedToday(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_orders', 'o')
       .where('o.deleted_at IS NULL')
@@ -394,7 +396,7 @@ export class DashboardService {
     return { data: rows.map(this.mapOrderRow), total };
   }
 
-  private async drilldownPartiallyCompletedToday(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownPartiallyCompletedToday(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_orders', 'o')
       .innerJoin('lis_order_items', 'oi', 'oi.order_id = o.id')
@@ -419,7 +421,7 @@ export class DashboardService {
     return { data: rows.map(this.mapOrderRow), total };
   }
 
-  private async drilldownEnteredByUserToday(orgId: string, userId?: string | null, offset: number = 0, limit: number = 50): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownEnteredByUserToday(orgId: string | null, userId?: string | null, offset: number = 0, limit: number = 50): Promise<{ data: Record<string, any>[]; total: number }> {
     if (!userId) return { data: [], total: 0 };
 
     const baseQb = () => this.dataSource.createQueryBuilder()
@@ -448,7 +450,7 @@ export class DashboardService {
     };
   }
 
-  private async drilldownRejectedToday(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownRejectedToday(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_samples', 's')
       .innerJoin('lis_orders', 'o', 's.order_id = o.id')
@@ -478,7 +480,7 @@ export class DashboardService {
     };
   }
 
-  private async drilldownUnprintedResults(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownUnprintedResults(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_results', 'r')
       .innerJoin('lis_order_items', 'oi', 'r.order_item_id = oi.id')
@@ -507,7 +509,7 @@ export class DashboardService {
     };
   }
 
-  private async drilldownReceivedToday(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownReceivedToday(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_orders', 'o')
       .where('o.deleted_at IS NULL')
@@ -534,7 +536,7 @@ export class DashboardService {
     };
   }
 
-  private async drilldownDelayedTurnaround(orgId: string, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
+  private async drilldownDelayedTurnaround(orgId: string | null, offset: number, limit: number): Promise<{ data: Record<string, any>[]; total: number }> {
     const baseQb = () => this.dataSource.createQueryBuilder()
       .from('lis_orders', 'o')
       .where('o.deleted_at IS NULL')
