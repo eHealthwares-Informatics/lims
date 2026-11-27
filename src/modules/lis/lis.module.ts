@@ -133,6 +133,8 @@ import { NotificationTriggersService } from './services/notification-triggers.se
 import { ConversationDispatchService } from './services/notification-dispatch.service';
 import { LabAlertScheduler } from './services/lab-alert.scheduler';
 import { PrintClientService } from '../prints/services/print-client.service';
+import { PatientRecordsService } from './services/patient-records.service';
+import { PatientSelfController } from './controllers/patient-self.controller';
 
 @Module({
   imports: [
@@ -182,6 +184,7 @@ import { PrintClientService } from '../prints/services/print-client.service';
     ]),
   ],
   controllers: [
+    PatientSelfController,
     CodeGeneratorController,
     BarcodeController,
     LoincController,
@@ -224,6 +227,7 @@ import { PrintClientService } from '../prints/services/print-client.service';
     NotificationTriggersController,
   ],
   providers: [
+    PatientRecordsService,
     CodeGeneratorService,
     BarcodeService,
     ReportPdfService,
